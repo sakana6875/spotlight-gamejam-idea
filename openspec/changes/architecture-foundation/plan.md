@@ -89,3 +89,11 @@ Spotlight.Tests.*      → 被测试程序集, Unity Test Framework
 - 确认 asmdef 被识别且无程序集循环引用。
 - 执行 EditMode 编译/测试入口，确认 Domain/Application 可编译。
 - 若当前 Agent 无法实际运行 Unity Editor，必须在任务和交付结果中标记“Editor 验证未完成”，不得声称验证通过。
+## Issue 2：存档、永久进度与设置契约
+
+1. 在 `Spotlight.Domain` 内实现纯数据模型和 `ISaveService`、`IProgressService`，先固定稳定 ID、结果类型和永久/临时状态分离规则。
+2. 在 `Spotlight.Adapters` 内实现内存服务；使用 `Dictionary<string, SaveSnapshot>` 实现唯一检查点覆盖，不引入文件 IO、Unity 序列化或场景依赖。
+3. 在 `Spotlight.Tests.EditMode` 内添加行为测试，覆盖空存档、覆盖、永久进度保留、未知 ID、重置和设置数据。
+4. 执行 JSON/依赖静态检查、Unity 导入编译和 EditMode Test Runner；失败后继续定位修复，不放宽断言。
+
+Issue 2 的实现不创建正式场景，不修改 Build Settings、SampleScene、URP 资源或 Packages。
