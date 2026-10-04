@@ -1,0 +1,18 @@
+{
+    "name": "Spotlight.Composition",
+    "rootNamespace": "Spotlight.Composition",
+    "references": [
+        "Spotlight.Application",
+        "Spotlight.Adapters",
+        "Spotlight.Domain"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

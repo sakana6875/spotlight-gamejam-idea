@@ -72,3 +72,28 @@ Assets/Scripts/Architecture/Adapters/Save/
 ## Issue 2 验证策略
 
 EditMode 测试通过 Ports 验证空存档、覆盖、旧快照读取、永久进度保留、未知 ID、重置和设置边界。测试不得检查私有字段或实现调用次数。Unity 批处理导入和 EditMode Test Runner 用于确认 asmdef、适配器和行为测试可编译运行。
+
+## Issue 3 组合根与全局服务设计
+
+`SessionRoot` 位于 `Composition` 程序集，是唯一知道具体服务实现的入口。`SessionBootstrapper` 保持初始化状态和幂等规则，`ISessionServiceFactory` 负责由组合根创建一组接口实现，`SessionServices` 只暴露接口引用给场景入口。
+
+```text
+SessionRoot : MonoBehaviour
+    ↓ 创建
+DefaultSessionServiceFactory
+    ↓ 组装
+SessionServices
+    ├── IEventBus
+    ├── ISceneFlow
+    ├── ISaveService
+    ├── IProgressService
+    ├── IAudioService
+    ├── IInputService
+    └── IDialogueService
+```
+
+本阶段的场景、音频、输入和对话实现是可验证的内存或明确不可用适配器：它们只验证接口边界和失败结果，不伪装为 `SceneManager`、`AudioMixer`、Input Actions 或内容资产的正式实现。`InMemoryEventBus` 是同步强类型事件总线，只负责发布、订阅和解除订阅。
+
+`SessionRoot.Initialize()` 在同一实例内重复调用时返回 `AlreadyInitialized` 并复用同一 `SessionServices`；首次成功后调用 `DontDestroyOnLoad`。当前不修改 `SampleScene`，因此实际场景启动和跨场景生命周期记录为“Editor 验证未完成”，由后续场景/Bootstrap Issue 完成。
+
+组合根和服务实现不提供全局静态访问入口。测试通过 `ISessionServiceFactory` 注入抛出明确错误的替身验证失败路径，不依赖 Unity 全局对象查找。

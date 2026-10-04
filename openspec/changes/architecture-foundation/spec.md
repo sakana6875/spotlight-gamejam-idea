@@ -110,3 +110,63 @@ Issue #1 已交付目录、asmdef 和依赖边界；本变更后续任务可以�
 4. Unity 能识别这些 asmdef；Domain/Application 不因 Unity 场景依赖而产生编译引用。
 5. 现有 SampleScene、URP 2D 资源和包依赖未被修改。
 6. 针对可执行环境完成程序集编译或 Editor 验证；无法由 Agent 执行的 Unity Editor 验证必须明确标注“Editor 验证未完成”。
+
+## 7. SessionRoot 与全局服务初始化
+
+### 要求：唯一组合根
+
+`SessionRoot` MUST 是当前运行周期创建和组装全局服务的唯一组合根。其他生产模块 MUST NOT 通过静态单例、Service Locator、`FindObjectOfType` 或 `FindFirstObjectByType` 查找、创建或替换全局服务。
+
+`SessionRoot` MUST 位于 `Assets/Scripts/Architecture/Composition/SessionRoot.cs`，并负责依赖组装，而不是承载菜单、Demo、场景或存档业务规则。
+
+### 要求：最小全局服务契约
+
+本阶段 MUST 为以下服务提供最小且可观察的接口契约，并由组合根负责提供实例：
+
+- `IEventBus`；
+- `ISceneFlow`；
+- `ISaveService`；
+- `IProgressService`；
+- `IAudioService`；
+- `IInputService`；
+- `IDialogueService`。
+
+已经在 Issue #2 建立的 `ISaveService` 和 `IProgressService` MUST 复用，不得创建重复接口或平行实现。其余接口只允许声明当前已确认的最小操作；未确认的完整业务能力 MUST NOT 以假成功、空方法或静默降级形式加入。
+
+### 要求：显式依赖注入
+
+场景入口和适配器 MUST 通过构造器、初始化方法或明确的依赖参数接收服务接口。服务使用方 MUST NOT 自行创建具体服务、缓存跨模块静态引用或依赖具体实现类型。
+
+组合根 MUST 能向启动入口提供完整的服务依赖集合，使后续场景适配器可以只依赖接口。初始化失败 MUST 返回或记录明确的失败原因，不能继续伪装为初始化成功。
+
+### 要求：初始化幂等和生命周期
+
+同一运行周期内重复触发初始化 MUST 不创建第二组全局服务。`SessionRoot` MUST 在首次有效初始化后使用 `DontDestroyOnLoad` 跨场景存活；重复入口 MUST 被明确拒绝或复用已完成初始化的组合根，并可观察其结果。
+
+本阶段 MUST 保持现有 `SampleScene` 不变，不创建正式 Bootstrap 场景，不修改 Build Settings。`SampleScene` 的临时验证入口可以承载 `SessionRoot` 的初始化烟测，但不得把该场景升级为正式流程入口。
+
+### 验收场景
+
+#### 场景：首次启动完成服务组装
+- **当** `SampleScene` 启动并触发 `SessionRoot` 初始化
+- **那么** 七类服务均由组合根创建或接收明确实现，初始化结果可观察，且启动入口只接收接口依赖。
+
+#### 场景：重复初始化不创建重复服务
+- **当** 同一运行周期再次触发 `SessionRoot` 初始化
+- **那么** 不创建第二组服务，并返回或记录明确的已初始化结果。
+
+#### 场景：初始化失败可观察
+- **当** 某个必需服务创建或组装失败
+- **那么** 初始化返回失败结果或报告包含服务标识和原因的错误，不能静默跳过该服务。
+
+#### 场景：模块不能自行查找服务
+- **当** 场景适配器或玩法模块使用全局服务
+- **那么** 它通过显式接口依赖获得服务，不通过静态单例、Service Locator 或 Unity 全局查找获得服务。
+
+#### 场景：组合根跨场景存活
+- **当** 场景发生切换
+- **那么** `SessionRoot` 不因场景卸载而销毁，且不得因此重复创建服务。
+
+### Issue 3 保护边界
+
+本阶段 MUST 不修改 `Assets/Scenes/SampleScene.unity`、`ProjectSettings/EditorBuildSettings.asset`、URP 资源或 `Packages/manifest.json`。Unity 场景启动和 `DontDestroyOnLoad` 的实际 Editor/PlayMode 验证若未由 Agent 执行，任务记录 MUST 标记“Editor 验证未完成”。
