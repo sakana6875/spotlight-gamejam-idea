@@ -46,17 +46,47 @@ Domain 代码只能依赖 .NET 基础类型和本程序集内的领域代码。�
 
 `Spotlight.Tests.EditMode` 和 `Spotlight.Tests.PlayMode` MUST 只引用被测试生产程序集以及 Unity Test Framework 所需程序集。生产程序集 MUST NOT 引用测试程序集。
 
-## 3. 当前交付内容
+## 3. 当前交付范围
 
-### 要求：本次只交付结构基础
+### 要求：已完成的架构边界
 
-本次变更 MUST 只实现 Issue #1 的目录、asmdef 和最小可编译入口。不得在本次变更中实现 SessionRoot、服务初始化、场景流程、存档、事件总线、音频、输入、对话或 Demo 玩法。
+Issue #1 已交付目录、asmdef 和依赖边界；本变更后续任务可以在这些边界内实现已确认的纯 C# 契约和内存适配器。
+
+### 要求：实现必须遵守已确认范围
+
+每个后续 Issue MUST 只实现其已确认的契约、适配器和验证，不得顺手创建正式场景、文件存档、静态单例、Service Locator 或未确认的业务流程。
 
 ### 要求：入口类型不能是假实现
 
-为了让程序集被 Unity 保留和编译，可以提供说明程序集职责的最小真实类型，但不得提供假成功、空方法、未实现业务返回值或误导性服务入口。仅为保留空目录创建的类型不应声明尚未确定的公共业务 API。
+为了让程序集被 Unity 保留和编译，可以提供说明程序集职责的最小真实类型，但不得提供假成功、空方法、未实现业务返回值或误导性服务入口。
 
-## 4. 资源与现有项目保护
+## 4. 存档、永久进度与设置契约
+
+### 要求：纯数据模型不依赖 Unity
+
+`SaveContainer`、`SaveSnapshot`、`PermanentProgress`、`SettingsData` 和 `CheckpointData` MUST 只使用 .NET 基础类型、不可变值和稳定字符串 ID，不得引用 `UnityEngine`、场景对象、`MonoBehaviour` 或具体存档实现。
+
+`SaveSnapshot` MUST 包含稳定且唯一的 `checkpointId`、场景 ID、检查点数据和可重建的临时状态。`PermanentProgress` MUST 与临时快照分离。
+
+### 要求：存档服务返回明确结果
+
+`ISaveService` MUST 提供 `HasSave`、`SaveCheckpoint`、`LoadLatestSnapshot`、`LoadSnapshot`、`ListSnapshots` 和 `ResetSave`。不存在快照、空存档和重置结果 MUST 可观察，不得返回假成功或静默降级。
+
+`IProgressService` MUST 支持 Demo 解锁、完成状态和剧情标记的查询与更新。`SettingsData` MUST 提供后续音频服务使用的稳定设置字段，包括 `masterVolume`、`bgmVolume`、`sfxVolume` 和 `narrationVolume`。
+
+### 要求：内存适配器只承担验证职责
+
+内存存档适配器 MUST 使用 `checkpointId` 作为唯一键，同一 ID 的后写入快照覆盖旧快照，并保留独立的永久进度。适配器不得声称完成正式文件持久化，不得序列化 Unity 对象。
+
+### 验收
+
+1. 空存档、未知快照 ID 和重置操作均返回明确结果。
+2. 同一 `checkpointId` 的后写入快照覆盖旧快照。
+3. 读取旧快照不会撤销永久进度。
+4. `SettingsData` 可被后续音频服务读取。
+5. EditMode 测试覆盖上述边界行为。
+
+## 5. 资源与现有项目保护
 
 ### 要求：不改变现有 Unity 资源
 
@@ -70,7 +100,7 @@ Domain 代码只能依赖 .NET 基础类型和本程序集内的领域代码。�
 
 不得创建正式场景或改变 Build Settings。
 
-## 5. 验收
+## 6. 总体验收
 
 满足以下条件才算完成：
 
