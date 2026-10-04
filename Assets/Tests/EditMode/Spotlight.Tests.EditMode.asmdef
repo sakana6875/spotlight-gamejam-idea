@@ -5,6 +5,7 @@
         "Spotlight.Domain",
         "Spotlight.Application",
         "Spotlight.Adapters",
+        "Spotlight.Composition",
         "Spotlight.Features"
     ],
     "optionalUnityReferences": [

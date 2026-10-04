@@ -63,3 +63,26 @@
 - asmdef 引用配置错误会导致 Unity 编译顺序或程序集解析失败，因此必须执行 Unity 重新导入/编译验证；若当前环境无法运行 Unity Editor，必须明确记录 Editor 验证未完成。
 - 空目录无法被版本控制保留，因此每个生产程序集需要一个最小、真实且可编译的入口类型；该入口不得伪装成未实现的业务服务。
 - 后续接口归属可能随着具体契约出现调整；本次只建立稳定的程序集边界，不提前创建未确认的业务接口。
+
+## Issue 3：SessionRoot 与全局服务初始化骨架
+
+在 Issue #1 的程序集边界和 Issue #2 的存档契约基础上，本阶段建立唯一组合根 `SessionRoot`。它负责创建并组装已确认的全局服务实现，通过显式依赖注入向场景入口和适配器提供接口，不让其他模块自行查找、创建或替换服务。
+
+本阶段使用现有 `SampleScene` 作为临时启动验证目标，不创建正式 Bootstrap、Menu、Hub 或 Demo 场景。`SessionRoot` 只验证初始化、生命周期和依赖组装边界，不实现完整的场景、输入、音频、对话或存档业务流程。
+
+### Issue 3 范围
+
+- 在 `Assets/Scripts/Architecture/Composition/` 创建 `SessionRoot : MonoBehaviour`；
+- 定义并组装 `IEventBus`、`ISceneFlow`、`ISaveService`、`IProgressService`、`IAudioService`、`IInputService` 和 `IDialogueService` 的最小明确契约；
+- 由组合根创建当前阶段可验证的具体实现，并将接口依赖显式传递给启动入口；
+- 使用 `DontDestroyOnLoad` 保持组合根跨场景存活；
+- 防止同一运行周期重复初始化，并报告初始化失败原因；
+- 使用 EditMode 行为测试验证初始化边界。
+
+### Issue 3 非目标
+
+- 不创建正式 Bootstrap 场景或修改 Build Settings；
+- 不实现完整场景加载、文件存档、AudioMixer、Input Actions、Dialogue 资源或 Demo 流程；
+- 不提供 `GameManager.Instance`、跨模块静态单例或 Service Locator；
+- 不允许其他模块通过 `FindObjectOfType`、`FindFirstObjectByType` 或静态字段获取服务；
+- 不为尚未确定的业务行为创建假成功、空方法或静默降级实现。

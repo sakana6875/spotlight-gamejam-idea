@@ -22,3 +22,18 @@
 - [x] 添加未知快照、重置和设置数据边界测试
 - [x] 执行 Unity 导入编译与 EditMode 测试：Unity 编译返回码 0；6 个 EditMode 测试全部通过
 - [x] 同步任务状态并记录验证结果
+
+## Issue #3：SessionRoot 与全局服务初始化骨架
+
+- [x] 更新 Issue #3 的提案、规格、实施计划和执行任务
+- [x] 验证 Issue #3 OpenSpec 变更：`openspec validate architecture-foundation` 通过
+- [x] 确认七类全局服务契约的程序集归属并复用 Issue #2 存档接口
+- [x] 实现七类服务的最小明确契约和可观察结果
+- [x] 实现可验证的最小服务适配器，不使用假成功、空方法或静默降级
+- [x] 实现 `SessionRoot` 唯一组合根和显式依赖组装
+- [x] 实现重复初始化保护、失败报告和跨场景生命周期处理
+- [x] 添加首次初始化、重复初始化和初始化失败行为测试
+- [x] 检查无静态单例、Service Locator 和 Unity 全局查找服务路径
+- [x] 执行 Unity 导入编译与相关 EditMode 测试：编译返回码 0；10 个测试全部通过
+- [x] 执行 SampleScene/跨场景生命周期验证：Editor 验证未完成；按 Issue #3 非目标未修改 SampleScene，已通过 EditMode 初始化行为验证
+- [x] 同步任务状态并记录验证结果

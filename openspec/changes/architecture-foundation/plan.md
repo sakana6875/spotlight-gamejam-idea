@@ -97,3 +97,42 @@ Spotlight.Tests.*      → 被测试程序集, Unity Test Framework
 4. 执行 JSON/依赖静态检查、Unity 导入编译和 EditMode Test Runner；失败后继续定位修复，不放宽断言。
 
 Issue 2 的实现不创建正式场景，不修改 Build Settings、SampleScene、URP 资源或 Packages。
+
+## Issue 3：SessionRoot 与全局服务初始化骨架
+
+### 实施步骤
+
+1. 读取当前 asmdef、Issue #2 的存档接口和 `SampleScene`/Build Settings 状态，确认不修改现有场景资源。
+2. 在 `Spotlight.Domain` 或 `Spotlight.Application` 的已有程序集边界内放置最小服务契约；复用 `ISaveService` 和 `IProgressService`，按职责归属其余接口，不创建独立 Contracts 程序集。
+3. 在 `Spotlight.Adapters` 或 `Spotlight.Application` 内提供可验证的最小服务实现。实现必须返回明确结果或状态，不得使用空方法、假成功或静默降级。
+4. 在 `Assets/Scripts/Architecture/Composition/SessionRoot.cs` 创建唯一组合根。它负责创建服务、组装依赖、执行一次性初始化和对外提供接口集合，不承载具体业务规则。
+5. 为 `SessionRoot` 定义幂等初始化和失败报告行为；使用 `DontDestroyOnLoad` 保持跨场景生命周期，但不修改 `SampleScene` 或创建正式 Bootstrap 场景。
+6. 为可注入启动入口提供显式依赖对象或初始化参数，禁止服务使用方通过静态字段和 Unity 全局查找获取服务。
+7. 添加 EditMode 行为测试，覆盖首次初始化、重复初始化、必需服务失败和接口依赖可见性；不通过私有字段或调用次数断言实现细节。
+8. 运行 OpenSpec 验证、静态依赖检查、Unity 导入编译和相关 EditMode 测试；场景启动与跨场景生命周期若未在 Unity Editor/PlayMode 中实际执行，记录“Editor 验证未完成”。
+
+### 目录与依赖
+
+```text
+Assets/Scripts/Architecture/
+├── Domain/ 或 Application/       # 服务 Ports 与结果契约
+├── Adapters/                     # 最小可验证服务实现
+└── Composition/
+    └── SessionRoot.cs            # 唯一组合根
+```
+
+依赖保持：
+
+```text
+SessionRoot/Adapters → Application/Domain → 纯数据与接口
+```
+
+`Domain` 和 `Application` 不得依赖 `SessionRoot`、具体 Adapter 或 Unity 场景对象；`SessionRoot` 可以依赖接口和具体实现，以履行组合根职责。
+
+### Issue 3 验证路径
+
+- 检查七类服务接口均有唯一归属且没有重复的存档/进度接口；
+- 检查 `SessionRoot` 是唯一创建和组装入口，没有静态服务单例和 Service Locator；
+- 检查重复初始化不会产生第二组服务，失败结果包含可定位原因；
+- 执行 Unity 批处理导入/编译与 EditMode 测试；
+- 仅在实际打开场景并执行生命周期流程后标记场景和 `DontDestroyOnLoad` 验证，否则明确记录“Editor 验证未完成”。
