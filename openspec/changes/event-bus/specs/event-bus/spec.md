@@ -1,6 +1,6 @@
 # 同步进程内强类型事件总线
 
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: 事件总线提供强类型同步发布订阅
 系统 MUST 提供 `IEventBus`，包含 `Publish<TEvent>`、`Subscribe<TEvent>` 和 `Unsubscribe<TEvent>` 三项操作。发布者只依赖事件类型和接口，不依赖订阅者具体类型。
