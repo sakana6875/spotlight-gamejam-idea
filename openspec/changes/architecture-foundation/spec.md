@@ -251,3 +251,30 @@ Issue #4 的可执行契约继续放在 `Spotlight.Application` 的 `Application
 - 新增接口必须对应已确认的调用方、替换需求或可验证的外部边界；
 - Demo 内部规则优先使用具体 Demo 的普通 C# 类、状态机和组件组合；
 - 当前 Issue #4 的验收只覆盖顶层场景 ID、场景目录、场景加载适配器和明确失败结果。
+## 9. Issue #5 架构骨架集成与 SampleScene 烟测
+
+### 要求：初始化事实事件
+
+`SessionInitializedEvent` MUST 是无 Unity 依赖的只读值类型，只表示组合根初始化成功完成。烟测入口在 `SessionRoot.Initialize()` 成功后通过 `SessionServices.EventBus` 同步发布，不得把 EventBus 依赖塞入 `SessionBootstrapper`。
+
+### 要求：烟测入口依赖与观察结果
+
+`SessionSmokeEntry` MUST 通过同一 GameObject 的 `GetComponent<SessionRoot>()` 获取组合根，不得使用 Unity 全局查找、静态服务入口或创建第二个组合根。入口必须公开可观察的完成、失败、事件接收以及六类服务结果属性：场景、存档、进度、音频、输入和对话不可用。
+
+初始化失败 MUST 不发布成功事件、不继续调用服务，并记录包含原因的错误。组件必须解除事件订阅；正式游戏逻辑、UI、文件存档、音频播放和场景跳转不属于该入口。
+
+### 要求：SampleScene 装配
+
+Editor 工具 MUST 通过 `EditorSceneManager` 打开并保存 `Assets/Scenes/SampleScene.unity`，复用名为 `ArchitectureSmoke` 的对象，并确保其只有一个 `SessionRoot` 和一个 `SessionSmokeEntry`。工具不得修改 Build Settings 或其他资源，不得手工编辑场景 YAML。
+
+### 验收场景
+
+- **当** SampleScene 启动：**那么** 入口在有限帧数内完成初始化并收到同步事件，`SessionRoot.IsInitialized` 为真。
+- **当** 入口调用七类服务端口：**那么** `SceneFlow.LoadScene(SceneId.SampleScene)`、有效 `SaveCheckpoint`、`SetVolume("SFX", 0.5f)` 和注册 `Interact` 成功；对话返回 `DialogueServiceResultCode.Unavailable`。
+- **当** 入口解除事件订阅后再次发布：**那么** 已解除处理器不再收到事件。
+- **当** 组合根或服务创建失败：**那么** 入口失败并保留可定位原因，不伪装完成。
+
+### 保护范围与限制
+
+本阶段仅验证 SampleScene 架构连通性；Bootstrap、Menu、Hub、Demo、正式 UI、Input Actions、AudioMixer、文件存档和剧情资产不在覆盖范围。未实际执行的 Editor/PlayMode 验证 MUST 标记“Editor 验证未完成”。
+***

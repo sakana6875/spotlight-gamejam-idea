@@ -60,3 +60,17 @@
 - [x] 将独立关卡场景、关卡稳定 ID 和关卡存档字段延后到有真实需求的 Demo Issue
 - [x] 保持 Issue #4 只验证顶层场景流程，不创建未来关卡占位资源
 - [x] 在交付记录中说明复杂度收敛决策和后续扩展触发条件
+## Issue #5：架构骨架集成与 SampleScene 烟测
+- [x] 追加 Issue #5 的 proposal、spec、plan、design 和 tasks 范围
+- [x] 执行 `openspec validate architecture-foundation` 并修复校验问题：返回 `Change 'architecture-foundation' is valid`
+- [x] 添加无 Unity 依赖的 `SessionInitializedEvent`
+- [x] 实现 `SessionSmokeEntry` 初始化、事件、服务调用、失败观察和解除订阅
+- [x] 实现 Editor 幂等场景装配工具并生成所需 `.meta`
+- [x] 更新 PlayMode asmdef，添加 SampleScene PlayMode 集成测试
+- [x] 添加 EventBus 初始化事件订阅、发布和解除订阅 EditMode 测试
+- [x] 执行 C# 程序集编译：`dotnet build Spotlight.Composition.csproj --no-restore` 成功；`dotnet build Spotlight.Tests.EditMode.csproj --no-restore` 成功，0 警告、0 错误
+- [x] 执行 EditMode 批处理测试：`editmode-results.xml` 返回 Passed，17 个测试全部通过
+- [x] 执行 PlayMode 批处理测试：`playmode-results.xml` 返回 Passed，1 个 `SessionSmokeTests` 全部通过；日志收到 `ArchitectureSmoke 收到 SessionInitializedEvent。`
+- [x] 使用 Unity Editor 执行 `SessionSmokeSceneSetup.Apply` 并保存 SampleScene；场景包含 `ArchitectureSmoke`，随后 PlayMode SampleScene 烟测通过
+- [x] 记录 Bootstrap、Menu、Hub、Demo、正式资源及未完成 Editor 验证限制：正式 UI、Input Actions、AudioMixer、文件存档和剧情资产仍未覆盖
+***

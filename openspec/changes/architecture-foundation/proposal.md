@@ -137,3 +137,25 @@ Unity 场景名、Build Settings 和稳定 ID 若分散维护，后续场景重�
 - 不为未来可能出现的关卡拆分提前创建通用层、事件或适配器。
 
 这样保留多关卡的产品方向，但避免在没有真实调用方前增加第二套场景系统。
+## Issue #5：架构骨架集成与 SampleScene 烟测
+
+### 背景与目标
+
+Issue #3 和 Issue #4 已完成组合根、七类服务和场景流程骨架，但尚未在真实 Unity 生命周期中连通验证。本阶段将现有 `SessionRoot` 与最小烟测入口放入 `SampleScene`，验证初始化、同步事实事件、服务端口调用和事件订阅解除。
+
+### 范围
+
+- 增加无 Unity 依赖的 `SessionInitializedEvent`；
+- 增加只依赖同一 GameObject `SessionRoot` 的 `SessionSmokeEntry`；
+- 增加通过 Unity Editor API 重复执行的 `SampleScene` 场景装配工具；
+- 增加 EventBus EditMode 行为测试和 SampleScene PlayMode 集成测试；
+- 记录真实 Unity 验证结果和未覆盖的正式资源范围。
+
+### 非目标
+
+不创建正式 Bootstrap、Menu、Hub 或 Demo 场景，不修改 Build Settings、URP、Packages，不添加正式玩法、剧情、AudioMixer、Input Actions、文件存档或 UI。烟测中的对话不可用结果必须保持失败边界，不能伪装成功。
+
+### 验收
+
+SampleScene 启动后 `SessionRoot` 初始化成功，`SessionInitializedEvent` 同步收到；场景流程、存档、进度、音频、输入端口均返回预期成功，对话端口返回已知 `Unavailable`；订阅解除后不再收到事件；初始化或服务调用失败均可观察并使烟测失败。
+***
