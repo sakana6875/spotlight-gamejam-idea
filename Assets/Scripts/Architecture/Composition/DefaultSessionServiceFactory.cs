@@ -1,6 +1,8 @@
 using Spotlight.Adapters.Save;
+using Spotlight.Adapters.Scene;
 using Spotlight.Adapters.Session;
 using Spotlight.Application.Services;
+using Spotlight.Application.Services.Scene;
 
 namespace Spotlight.Composition
 {
@@ -15,7 +17,7 @@ namespace Spotlight.Composition
 
             return new SessionServices(
                 new InMemoryEventBus(),
-                new InMemorySceneFlow(),
+                new RecordingSceneFlow(SceneCatalog.CreateDefault()),
                 saveService,
                 new InMemoryProgressService(saveService.PermanentProgress),
                 new InMemoryAudioService(),

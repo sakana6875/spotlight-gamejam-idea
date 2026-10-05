@@ -37,3 +37,26 @@
 - [x] 执行 Unity 导入编译与相关 EditMode 测试：编译返回码 0；10 个测试全部通过
 - [x] 执行 SampleScene/跨场景生命周期验证：Editor 验证未完成；按 Issue #3 非目标未修改 SampleScene，已通过 EditMode 初始化行为验证
 - [x] 同步任务状态并记录验证结果
+
+## Issue #4：场景流程契约与 Unity 场景适配器骨架
+
+- [x] 更新 Issue #4 的提案、规格、实施计划和设计记录
+- [x] 验证 Issue #4 OpenSpec 变更：`openspec validate architecture-foundation` 通过
+- [x] 确认现有 `ISceneFlow` 和 `InMemorySceneFlow` 的迁移边界，不创建独立 Contracts 程序集
+- [x] 定义稳定 `SceneId`、`DemoId`、`DemoEntryMode`、`SceneCatalog` 和 `SceneLoadResult`
+- [x] 扩展场景流程端口：`LoadScene`、`LoadMenu`、`LoadHub`、`EnterDemo`、`RestartDemo`
+- [x] 实现记录型场景适配器并覆盖有效、未知和未登记场景结果
+- [x] 实现唯一 `UnitySceneFlowAdapter` 的 `SceneManager.LoadSceneAsync` 边界
+- [x] 确认 Application、Gameplay、UI 和 Composition 不直接依赖 `SceneManager`
+- [x] 添加场景登记、失败结果、Demo 入口模式和调用参数行为测试
+- [x] 执行 Unity 导入编译与相关 EditMode 测试：编译成功；16 个 EditMode 测试全部通过
+- [x] 执行 `SampleScene` 实际场景加载烟测：Editor 验证未完成；未修改 SampleScene，已通过场景流程纯 C# 行为验证
+- [x] 同步任务状态、验证记录和 Issue #4 交付信息
+
+### Issue #4 多关卡范围决策
+
+- [x] 记录 Demo 内部多关卡默认由具体 Demo 状态机管理
+- [x] 暂不创建通用 `IDemoLevelFlow`、`LoadDemoLevel` 或独立关卡场景适配器
+- [x] 将独立关卡场景、关卡稳定 ID 和关卡存档字段延后到有真实需求的 Demo Issue
+- [x] 保持 Issue #4 只验证顶层场景流程，不创建未来关卡占位资源
+- [x] 在交付记录中说明复杂度收敛决策和后续扩展触发条件

@@ -170,3 +170,84 @@ Issue #1 已交付目录、asmdef 和依赖边界；本变更后续任务可以�
 ### Issue 3 保护边界
 
 本阶段 MUST 不修改 `Assets/Scenes/SampleScene.unity`、`ProjectSettings/EditorBuildSettings.asset`、URP 资源或 `Packages/manifest.json`。Unity 场景启动和 `DontDestroyOnLoad` 的实际 Editor/PlayMode 验证若未由 Agent 执行，任务记录 MUST 标记“Editor 验证未完成”。
+
+## 8. 场景流程契约与适配器
+
+### 要求：稳定场景与 Demo 标识
+
+场景流程 MUST 使用稳定英文 ID，不得让调用方直接传递散落的 Unity 场景名称。首批场景 ID MUST 覆盖：`SampleScene`、`Bootstrap`、`Menu`、`Hub`、`Demo1`、`Demo2`、`Demo3` 和 `ChaosDemo`。
+
+Demo 入口 MUST 使用稳定 `DemoId` 和明确的 `DemoEntryMode`，至少区分正常进入、继续和重新开始所需的入口语义；本阶段只定义契约，不实现解锁或恢复规则。
+
+### 要求：场景流程端口
+
+`ISceneFlow` MUST 提供以下操作：
+
+- `LoadScene`；
+- `LoadMenu`；
+- `LoadHub`；
+- `EnterDemo`；
+- `RestartDemo`。
+
+每个操作 MUST 返回可观察的 `SceneLoadResult` 或等价结果对象，至少区分成功、无效 ID、未登记场景、当前场景和加载失败。调用方 MUST 只依赖端口，不引用 `SceneManager` 或具体 Unity 场景名。
+
+### 要求：集中式场景目录
+
+`SceneCatalog` MUST 集中管理稳定场景 ID 到 Unity 场景名的映射，并提供登记查询。映射不存在、场景尚未创建或场景未被当前适配器支持时 MUST 返回明确失败，不得自动回退到 `SampleScene` 或报告假成功。
+
+### 要求：Unity 适配器边界
+
+只有 `UnitySceneFlowAdapter` MAY 调用 `SceneManager.LoadSceneAsync`。适配器 MUST 在发起加载前校验稳定 ID 和目录登记状态；加载请求使用异步 API，并将 Unity 加载异常或失败转换为可观察结果。`Application` 和 `Domain` MUST 不引用 `UnityEngine.SceneManagement`。
+
+Issue #4 的可执行契约继续放在 `Spotlight.Application` 的 `Application/Services/Scene/` 目录，不创建独立 Contracts 程序集；Unity 实现放在 `Spotlight.Adapters` 的 `Adapters/Scene/` 目录。
+
+### 验收场景
+
+#### 场景：登记的 SampleScene 可请求加载
+
+- **当** 调用方使用 `SampleScene` 稳定 ID 请求加载
+- **那么** 记录型适配器返回明确成功；Unity 适配器仅在场景登记且资源可用时发起加载。
+
+#### 场景：未知或未创建场景不可假成功
+
+- **当** 调用方使用未知 ID，或使用已定义但当前未创建/未登记的场景 ID
+- **那么** 返回明确失败原因，不调用 Unity 场景加载 API，也不回退到其他场景。
+
+#### 场景：Demo 入口保留模式
+
+- **当** 调用方使用稳定 `DemoId` 和 `DemoEntryMode` 进入或重启 Demo
+- **那么** 适配器/记录型替身收到对应的 Demo 标识和模式；本阶段不自行推进解锁、存档或玩法状态。
+
+#### 场景：调用方不依赖 SceneManager
+
+- **当** Application、Gameplay 或 UI 请求场景切换
+- **那么** 它们只调用 `ISceneFlow`，`SceneManager` 依赖仅存在于 Adapter。
+
+### Issue 4 保护边界
+
+本阶段 MUST 不修改 `Assets/Scenes/SampleScene.unity`、`ProjectSettings/EditorBuildSettings.asset`、URP 资源或 `Packages/manifest.json`。`SampleScene` 实际加载烟测若未由 Agent 在 Unity Editor/PlayMode 中执行，任务记录 MUST 标记“Editor 验证未完成”。
+
+### 多关卡复杂度边界
+
+一个 Demo MAY 包含多个内部关卡，但 Issue #4 只定义顶层场景流程，不要求创建通用 Demo 关卡流程系统。
+
+当前 MUST 遵守：
+
+- Demo 顶层场景使用 `ISceneFlow`；
+- Demo 内部关卡默认由具体 Demo 的 Application/Domain 状态机管理；
+- Demo 玩法代码不得直接调用 `SceneManager`；
+- 未确认需要独立 Unity 场景前，不得添加 `IDemoLevelFlow`、`LoadDemoLevel`、`RestartDemoLevel` 或通用关卡适配器；
+- 只有具体 Demo Issue 确认关卡需要独立 Unity 场景时，才新增对应稳定 ID、加载操作、存档字段和恢复验收；
+- 关卡流程不得因此自动承担 Demo 解锁、完成、剧情或坏结局规则。
+
+若当前 Demo 只是在同一场景中切换区域或阶段，应使用该 Demo 自己的普通状态机，不经过 `ISceneFlow`。
+
+### 架构复杂度边界
+
+本变更遵循“保留真实边界，延后未来抽象”：
+
+- 保留 `SessionRoot`、`ISaveService`、`IProgressService` 和 `ISceneFlow` 等已有真实跨模块边界；
+- 不为没有真实调用方的功能增加通用 EventBus 事件、Demo 关卡端口、场景栈、Additive 场景系统或通用编排器；
+- 新增接口必须对应已确认的调用方、替换需求或可验证的外部边界；
+- Demo 内部规则优先使用具体 Demo 的普通 C# 类、状态机和组件组合；
+- 当前 Issue #4 的验收只覆盖顶层场景 ID、场景目录、场景加载适配器和明确失败结果。

@@ -97,3 +97,61 @@ SessionServices
 `SessionRoot.Initialize()` 在同一实例内重复调用时返回 `AlreadyInitialized` 并复用同一 `SessionServices`；首次成功后调用 `DontDestroyOnLoad`。当前不修改 `SampleScene`，因此实际场景启动和跨场景生命周期记录为“Editor 验证未完成”，由后续场景/Bootstrap Issue 完成。
 
 组合根和服务实现不提供全局静态访问入口。测试通过 `ISessionServiceFactory` 注入抛出明确错误的替身验证失败路径，不依赖 Unity 全局对象查找。
+
+## Issue 4 场景流程与适配器设计
+
+Issue #4 复用 `Spotlight.Application` 中的场景服务契约，不创建独立 `Spotlight.Contracts` 程序集。虽然原 Issue 描述了 `Assets/Scripts/Architecture/Contracts/Scene/`，但当前架构已确定 Contracts 只是组织概念；将可执行脚本放入该目录会落入默认程序集或迫使项目增加无明确边界的程序集。因此实际落点为：
+
+```text
+Assets/Scripts/Architecture/
+├── Application/Services/Scene/
+│   ├── SceneId.cs
+│   ├── DemoId.cs
+│   ├── DemoEntryMode.cs
+│   ├── SceneCatalog.cs
+│   ├── ISceneFlow.cs
+│   └── SceneLoadResult.cs
+└── Adapters/Scene/
+    ├── UnitySceneFlowAdapter.cs
+    └── RecordingSceneFlow.cs
+```
+
+稳定 ID 是领域/应用层数据，不等于 Unity 场景名。`SceneCatalog` 是唯一映射入口，负责回答“该稳定 ID 是否登记、对应哪个场景名、当前适配器是否允许加载”。它不调用 Unity API，也不负责解锁和存档。
+
+`ISceneFlow` 只表达场景流程请求和结果。`EnterDemo`、`RestartDemo` 接收 `DemoId` 与 `DemoEntryMode`，但本阶段不推进 Demo 解锁、恢复检查点或重置玩法状态；这些属于后续 Application 用例。`RecordingSceneFlow` 用于 EditMode 验证调用参数，`UnitySceneFlowAdapter` 是唯一可以调用 `SceneManager.LoadSceneAsync` 的类型。
+
+未创建场景和未知 ID 必须失败，不得回退到 `SampleScene`。当前 Build Settings 和场景资源不修改，因此只有现有 `SampleScene` 可以作为真实加载烟测目标；其他稳定 ID 可以在目录中定义，但必须返回未登记/不可用结果。
+
+现有 `InMemorySceneFlow` 将迁移为记录型场景流程适配器，保持 `SessionRoot` 的服务组装接口不变。迁移后所有调用方仍通过 `ISceneFlow`，不直接依赖具体适配器或 `SceneManager`。
+
+## Issue 4 多关卡与复杂度边界
+
+Demo 的多个内部关卡首先视为该 Demo 内部的业务状态：
+
+```text
+Demo2Controller
+    └── currentLevel = Level02
+```
+
+只要关卡仍在同一个 Demo Unity 场景内，具体 Demo 使用自己的状态机或普通 C# 控制器管理，不经过通用 `ISceneFlow`。这样可以直接表达关卡目标、出生点和临时状态，不为简单枚举切换增加跨层接口。
+
+只有后续确认关卡需要独立 Unity 场景时，才在对应 Demo 的专用 Issue 中增加：
+
+- 稳定 `DemoLevelId`；
+- 关卡归属校验；
+- 独立场景加载操作；
+- 关卡检查点字段；
+- 具体恢复顺序和 PlayMode 验收。
+
+当前不创建通用 `IDemoLevelFlow`，不在 `ISceneFlow` 中加入 `LoadDemoLevel`，也不创建 Additive 场景系统。场景流程模块只负责已经确认的顶层场景切换。
+
+整体复杂度控制原则：
+
+```text
+真实跨模块边界 → 接口
+Demo 内部规则   → 具体状态机/普通类
+Unity API       → 对应 Adapter
+未来可能需求   → 不提前抽象
+```
+
+`SessionRoot` 继续负责服务创建和组装，但不扩展为万能游戏管理器；`EventBus` 只在出现真实的多订阅方事实通知时使用，不把所有方法都改成事件。

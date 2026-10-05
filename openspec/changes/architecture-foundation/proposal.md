@@ -86,3 +86,54 @@
 - 不提供 `GameManager.Instance`、跨模块静态单例或 Service Locator；
 - 不允许其他模块通过 `FindObjectOfType`、`FindFirstObjectByType` 或静态字段获取服务；
 - 不为尚未确定的业务行为创建假成功、空方法或静默降级实现。
+
+## Issue 4：场景流程契约与 Unity 场景适配器骨架
+
+### 背景
+
+Menu、Hub 和各个 Demo 后续需要作为独立场景加载。若场景加载逻辑散落在玩法脚本中，玩法模块就会直接依赖 `SceneManager`，同时难以测试未登记场景、重复加载和 Demo 入口参数。
+
+### 目标
+
+建立稳定的场景与 Demo 标识、统一场景流程端口和最小 Unity 场景加载适配器。调用方只依赖 `ISceneFlow`，具体 `SceneManager.LoadSceneAsync` 只能出现在场景适配器内。
+
+### 范围
+
+- 定义 `SampleScene`、`Bootstrap`、`Menu`、`Hub`、`Demo1`、`Demo2`、`Demo3`、`ChaosDemo` 稳定场景 ID；
+- 定义 `DemoId`、`DemoEntryMode`、`SceneLoadResult` 和场景流程相关结果类型；
+- 提供 `LoadScene`、`LoadMenu`、`LoadHub`、`EnterDemo`、`RestartDemo` 操作；
+- 通过集中式 `SceneCatalog` 管理稳定 ID 到 Unity 场景名的映射；
+- 提供只允许加载已登记场景的 `UnitySceneFlowAdapter`；
+- 为已登记的 `SampleScene` 提供最小真实加载路径；
+- 为未知或当前未创建的场景返回明确失败结果；
+- 添加 EditMode 契约/记录型替身测试，并记录 `SampleScene` 实际加载烟测状态。
+
+### 目录归属决策
+
+Issue #4 原始描述中的 `Contracts/Scene/` 作为概念组织位置保留，但当前项目已明确不创建独立 Contracts 程序集。为避免脚本落入默认程序集，实际可执行场景契约继续放在已有 `Spotlight.Application` 的 `Application/Services/Scene/` 目录；Unity 实现场景放在 `Adapters/Scene/`。这沿用 Issue #3 的服务契约归属，不新增万能 Contracts 程序集。
+
+### 非目标
+
+- 不创建 Bootstrap、Menu、Hub 或任意 Demo 正式场景；
+- 不修改 `SampleScene`、Build Settings、URP 资源或 Packages；
+- 不实现解锁规则、检查点恢复、加载界面、玩家出生点或 Demo 业务状态；
+- 不让 `SceneFlow` 持有具体场景对象或跨场景玩法引用；
+- 不把未创建的场景报告为加载成功。
+
+### 风险
+
+Unity 场景名、Build Settings 和稳定 ID 若分散维护，后续场景重命名容易产生运行时错误。本阶段通过集中式目录和明确失败结果降低风险；由于不修改 Build Settings，除 `SampleScene` 外的场景只能登记为不可用或未创建，不能伪造成功。
+
+### 多关卡范围收敛
+
+一个 Demo 可以包含多个内部关卡，但 Issue #4 不提前实现通用 `IDemoLevelFlow`、独立关卡场景加载或完整关卡恢复编排。
+
+当前约定：
+
+- Demo 顶层场景通过 `ISceneFlow` 管理；
+- Demo 内部关卡默认由该 Demo 的普通状态机或控制器管理；
+- 只有确认某个 Demo 的关卡确实需要独立 Unity 场景时，才在对应 Demo Issue 中扩展场景流程端口；
+- 关卡 ID 和检查点字段只在出现真实关卡恢复需求时加入存档契约；
+- 不为未来可能出现的关卡拆分提前创建通用层、事件或适配器。
+
+这样保留多关卡的产品方向，但避免在没有真实调用方前增加第二套场景系统。
