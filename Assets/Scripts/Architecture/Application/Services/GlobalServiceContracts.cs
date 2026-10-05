@@ -1,6 +1,6 @@
 using System;
 using Spotlight.Domain.Save;
-
+using Spotlight.Application.Services.Scene;
 namespace Spotlight.Application.Services
 {
     /// <summary>
@@ -13,14 +13,6 @@ namespace Spotlight.Application.Services
         void Unsubscribe<TEvent>(Action<TEvent> handler);
     }
 
-    /// <summary>
-    /// 提供场景流程请求的端口；具体 Unity 场景加载由适配器负责。
-    /// </summary>
-    public interface ISceneFlow
-    {
-        string CurrentSceneId { get; }
-        SceneFlowResult LoadScene(string sceneId);
-    }
 
     /// <summary>
     /// 提供音频设置和播放边界的端口，不暴露 AudioSource。
@@ -81,35 +73,6 @@ namespace Spotlight.Application.Services
         public IDialogueService DialogueService { get; }
     }
 
-    public enum SceneFlowResultCode
-    {
-        Success,
-        InvalidSceneId,
-        AlreadyActive
-    }
-
-    public sealed class SceneFlowResult
-    {
-        private SceneFlowResult(SceneFlowResultCode code, string sceneId)
-        {
-            Code = code;
-            SceneId = sceneId;
-        }
-
-        public SceneFlowResultCode Code { get; }
-        public string SceneId { get; }
-        public bool IsSuccess => Code == SceneFlowResultCode.Success;
-
-        public static SceneFlowResult Succeeded(string sceneId)
-        {
-            return new SceneFlowResult(SceneFlowResultCode.Success, sceneId);
-        }
-
-        public static SceneFlowResult Failed(SceneFlowResultCode code)
-        {
-            return new SceneFlowResult(code, null);
-        }
-    }
 
     public enum AudioServiceResultCode
     {

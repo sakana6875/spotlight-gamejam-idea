@@ -136,3 +136,52 @@ SessionRoot/Adapters → Application/Domain → 纯数据与接口
 - 检查重复初始化不会产生第二组服务，失败结果包含可定位原因；
 - 执行 Unity 批处理导入/编译与 EditMode 测试；
 - 仅在实际打开场景并执行生命周期流程后标记场景和 `DontDestroyOnLoad` 验证，否则明确记录“Editor 验证未完成”。
+
+## Issue 4：场景流程契约与 Unity 场景适配器骨架
+
+### 实施步骤
+
+1. 读取当前 `ISceneFlow`、`InMemorySceneFlow`、Composition 组装关系、`SampleScene` 和 Build Settings 状态；确认不修改现有场景资源。
+2. 将现有最小场景流程契约迁移到 `Application/Services/Scene/`，保持 `Spotlight.Application` 程序集归属；移除旧的重复定义，确保 SessionRoot 和现有适配器的调用方全部迁移。
+3. 定义稳定 `SceneId`、`DemoId`、`DemoEntryMode`、`SceneCatalog`、`SceneLoadResult` 及必要的结果码。目录只描述当前允许的稳定 ID，不把未创建场景伪装为可用。
+4. 扩展 `ISceneFlow`，实现 `LoadScene`、`LoadMenu`、`LoadHub`、`EnterDemo` 和 `RestartDemo`；记录型适配器用于 EditMode 验证参数与失败结果。
+5. 在 `Adapters/Scene/UnitySceneFlowAdapter.cs` 实现唯一的 `SceneManager.LoadSceneAsync` 边界。适配器先查 `SceneCatalog`，只对已登记且可用的场景发起加载，并把无效输入转换为明确结果。
+6. 保持 `SessionRoot` 通过接口组装场景服务，不让 Composition、Gameplay 或 UI 直接依赖 Unity SceneManager；不创建正式场景或修改 Build Settings。
+7. 添加 EditMode 行为测试，覆盖 SampleScene 登记、未知场景、未创建场景、Demo 入口模式、重复/当前场景结果和调用参数；不测试私有字段或 Unity 序列化细节。
+8. 执行 OpenSpec 校验、静态依赖检查、Unity 导入编译和相关 EditMode 测试；只有实际执行 SampleScene 加载烟测后才能标记 Editor 验证完成，否则明确记录“Editor 验证未完成”。
+
+### 目录与依赖
+
+```text
+Assets/Scripts/Architecture/
+├── Application/Services/Scene/   # 属于 Spotlight.Application 的场景 Ports 与纯数据
+├── Adapters/Scene/               # UnitySceneFlowAdapter 与记录型验证适配器
+└── Composition/                  # 只负责组装，不持有场景加载细节
+```
+
+依赖保持：
+
+```text
+UnitySceneFlowAdapter → Application/Domain
+Composition           → Application/Adapters/Domain
+Application/Domain    → 不依赖 Unity SceneManager
+```
+
+Issue #4 不创建独立 `Spotlight.Contracts` 程序集。原 Issue 描述中的 `Contracts/Scene/` 是职责概念，实际文件必须落在已有程序集目录，避免默认程序集和无意义程序集拆分。
+
+### Issue 4 验证路径
+
+- 检查稳定 ID、目录映射和结果码没有重复或隐式回退；
+- 检查只有 Unity 适配器引用 `UnityEngine.SceneManagement`；
+- 检查 `SessionRoot`、现有内存适配器和调用方完成接口迁移；
+- 执行 Unity 批处理导入/编译与 EditMode 测试；
+- 未实际加载 `SampleScene` 时记录“Editor 验证未完成”。
+
+### 多关卡与复杂度边界
+
+1. Demo 内部可以有多个关卡，但当前不创建通用 `IDemoLevelFlow`、`LoadDemoLevel` 或独立关卡场景系统。
+2. 具体 Demo 优先使用自己的 Application/Domain 状态机管理内部关卡；只在真实需求确认需要独立 Unity 场景时，新增对应 Demo 的专用扩展。
+3. 关卡恢复字段、独立关卡稳定 ID 和场景加载操作延后到产生真实检查点恢复需求的 Demo Issue，不提前修改通用存档契约。
+4. Issue #4 只验证顶层场景流程，不为未来多关卡场景创建占位资源、通用适配器或预留接口。
+5. 保留真实需要的 `SessionRoot`、存档/进度端口和 `ISceneFlow`；暂不扩展通用 EventBus、场景栈、Additive 场景编排或万能 Demo 管理器。
+6. 所有新增抽象必须有已确认调用方和独立行为验收，不能仅因为未来可能复用而加入。
