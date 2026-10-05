@@ -12,6 +12,9 @@ namespace Spotlight.Adapters.Session
         private readonly Dictionary<Type, List<Delegate>> _handlers =
             new Dictionary<Type, List<Delegate>>();
 
+        /// <summary>
+        /// 按订阅顺序同步发布事件；处理器异常直接传播且停止本次发布。
+        /// </summary>
         public void Publish<TEvent>(TEvent eventData)
         {
             Type eventType = typeof(TEvent);
@@ -20,6 +23,7 @@ namespace Spotlight.Adapters.Session
                 return;
             }
 
+            // 快照保证处理器可以在回调期间解除订阅，变更只影响后续发布。
             Delegate[] snapshot = handlers.ToArray();
             for (int index = 0; index < snapshot.Length; index++)
             {
@@ -27,6 +31,9 @@ namespace Spotlight.Adapters.Session
             }
         }
 
+        /// <summary>
+        /// 注册事件处理器；同一处理器重复注册不会重复通知。
+        /// </summary>
         public void Subscribe<TEvent>(Action<TEvent> handler)
         {
             if (handler == null)
@@ -47,6 +54,9 @@ namespace Spotlight.Adapters.Session
             }
         }
 
+        /// <summary>
+        /// 解除事件处理器；不存在的处理器或事件类型安全返回。
+        /// </summary>
         public void Unsubscribe<TEvent>(Action<TEvent> handler)
         {
             if (handler == null)
@@ -66,5 +76,6 @@ namespace Spotlight.Adapters.Session
                 _handlers.Remove(eventType);
             }
         }
+
     }
 }

@@ -8,8 +8,19 @@ namespace Spotlight.Application.Services
     /// </summary>
     public interface IEventBus
     {
+        /// <summary>
+        /// 同步通知当前事件类型的订阅者；处理器异常直接传播给调用方。
+        /// </summary>
         void Publish<TEvent>(TEvent eventData);
+
+        /// <summary>
+        /// 注册事件处理器；同一处理器重复注册不会重复通知。
+        /// </summary>
         void Subscribe<TEvent>(Action<TEvent> handler);
+
+        /// <summary>
+        /// 解除事件处理器注册；不存在的注册安全返回。
+        /// </summary>
         void Unsubscribe<TEvent>(Action<TEvent> handler);
     }
 
