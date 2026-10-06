@@ -1,5 +1,6 @@
-using System;
 using Spotlight.Application.Services;
+using Spotlight.Application.Services.Dialogue;
+using Spotlight.Domain.Story;
 
 namespace Spotlight.Adapters.Session
 {
@@ -9,15 +10,26 @@ namespace Spotlight.Adapters.Session
     public sealed class UnavailableDialogueService : IDialogueService
     {
         public bool IsPlaying => false;
+        public bool IsMovementLocked => false;
 
-        public DialogueServiceResult StartDialogue(string contentId)
+        public DialogueResult StartDialogue(DialogueRequest request)
         {
-            if (string.IsNullOrWhiteSpace(contentId))
+            if (request == null || !request.ContentId.IsValid)
             {
-                return DialogueServiceResult.InvalidContent();
+                return DialogueResult.InvalidContent();
             }
 
-            return DialogueServiceResult.Unavailable();
+            return DialogueResult.Unavailable();
+        }
+
+        public DialogueResult Skip()
+        {
+            return DialogueResult.NotPlaying();
+        }
+
+        public DialogueResult Complete()
+        {
+            return DialogueResult.NotPlaying();
         }
     }
 }

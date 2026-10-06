@@ -278,3 +278,25 @@ Editor 工具 MUST 通过 `EditorSceneManager` 打开并保存 `Assets/Scenes/Sa
 
 本阶段仅验证 SampleScene 架构连通性；Bootstrap、Menu、Hub、Demo、正式 UI、Input Actions、AudioMixer、文件存档和剧情资产不在覆盖范围。未实际执行的 Editor/PlayMode 验证 MUST 标记“Editor 验证未完成”。
 ***
+## 10. Issue #7 对话生命周期与 Demo 流程
+
+### 要求：稳定剧情与对话契约
+
+`ContentId` 和 `StoryFlag` MUST 是不依赖 Unity 的可比较纯值，并在构造时清理空白；空标识 MUST 被识别为无效。`DialogueRequest` MUST 只携带稳定内容 ID 和移动锁定意图，不持有场景对象、UI 或服务实例。
+
+`IDialogueService` MUST 通过 `DialogueRequest` 提供开始、跳过和完成操作，并返回可观察的 `DialogueResult`。开始成功、跳过、完成、不可用、非法内容 ID 和未播放状态 MUST 使用不同结果码；开始成功后 `IsPlaying` 为真，生命周期结束后 `IsPlaying` 和 `IsMovementLocked` 均为假。
+
+### 要求：统一 Demo 流程结果
+
+`IDemoFlow` MUST 提供进入、重试和退出操作，并返回带有稳定 `DemoId` 和入口模式的 `DemoRunResult`。结果 MUST 明确区分 `Succeeded`、`Failed` 和 `Abandoned`；流程端口不得加载场景、修改存档、推进解锁或自动触发 `EndingId.BadEnding`。
+
+记录型适配器只记录最近一次请求并允许测试注入下一次明确结果，不得伪装为完整 Demo 玩法或剧情系统。`IDialogueService` 的现有组合根调用方 MUST 完成请求对象迁移，默认不可用适配器对合法内容仍返回 `Unavailable`。
+
+### 验收场景
+
+1. 有效对话请求开始后保持移动锁定，跳过或完成后解除；非法请求不开始播放。
+2. 未播放时跳过或完成返回 `NotPlaying`，不伪造成功。
+3. Demo 进入、重试和退出保留对应操作、Demo ID 和入口模式；结果分别可观察为成功、失败或主动退出。
+4. 对话/Demo 适配器不调用 `SceneManager`，不写入永久进度，不自动判定坏结局。
+5. EditMode 行为测试覆盖上述边界，目标程序集和现有 PlayMode 烟测保持通过。
+

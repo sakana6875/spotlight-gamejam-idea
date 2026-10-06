@@ -1,8 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Spotlight.Application.Services;
+using Spotlight.Application.Services.Dialogue;
 using Spotlight.Application.Services.Scene;
 using Spotlight.Domain.Save;
+using Spotlight.Domain.Story;
 
 namespace Spotlight.Composition
 {
@@ -118,8 +120,9 @@ namespace Spotlight.Composition
                 InputSucceeded = true;
             }
 
-            DialogueServiceResult dialogueResult = services.DialogueService.StartDialogue("smoke_dialogue");
-            if (dialogueResult.Code != DialogueServiceResultCode.Unavailable)
+            DialogueResult dialogueResult = services.DialogueService.StartDialogue(
+                new DialogueRequest(new ContentId("smoke_dialogue"), false));
+            if (dialogueResult.Code != DialogueResultCode.Unavailable)
             {
                 Fail("对话烟测未返回预期的 Unavailable：" + dialogueResult.Code);
             }

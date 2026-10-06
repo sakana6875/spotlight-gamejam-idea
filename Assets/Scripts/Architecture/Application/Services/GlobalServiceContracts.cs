@@ -1,5 +1,7 @@
 using System;
 using Spotlight.Domain.Save;
+using Spotlight.Domain.Story;
+using Spotlight.Application.Services.Dialogue;
 using Spotlight.Application.Services.Scene;
 namespace Spotlight.Application.Services
 {
@@ -33,12 +35,15 @@ namespace Spotlight.Application.Services
     }
 
     /// <summary>
-    /// 提供对话请求边界；文本资产和播放表现不属于本阶段。
+    /// 提供稳定内容 ID 对应的对话生命周期边界；不直接操作 UI 或场景对象。
     /// </summary>
     public interface IDialogueService
     {
         bool IsPlaying { get; }
-        DialogueServiceResult StartDialogue(string contentId);
+        bool IsMovementLocked { get; }
+        DialogueResult StartDialogue(DialogueRequest request);
+        DialogueResult Skip();
+        DialogueResult Complete();
     }
 
     /// <summary>
@@ -130,30 +135,4 @@ namespace Spotlight.Application.Services
         }
     }
 
-    public enum DialogueServiceResultCode
-    {
-        Unavailable,
-        InvalidContentId
-    }
-
-    public sealed class DialogueServiceResult
-    {
-        private DialogueServiceResult(DialogueServiceResultCode code)
-        {
-            Code = code;
-        }
-
-        public DialogueServiceResultCode Code { get; }
-        public bool IsSuccess => false;
-
-        public static DialogueServiceResult Unavailable()
-        {
-            return new DialogueServiceResult(DialogueServiceResultCode.Unavailable);
-        }
-
-        public static DialogueServiceResult InvalidContent()
-        {
-            return new DialogueServiceResult(DialogueServiceResultCode.InvalidContentId);
-        }
-    }
 }

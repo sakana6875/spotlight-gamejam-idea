@@ -159,3 +159,27 @@ Issue #3 和 Issue #4 已完成组合根、七类服务和场景流程骨架，�
 
 SampleScene 启动后 `SessionRoot` 初始化成功，`SessionInitializedEvent` 同步收到；场景流程、存档、进度、音频、输入端口均返回预期成功，对话端口返回已知 `Unavailable`；订阅解除后不再收到事件；初始化或服务调用失败均可观察并使烟测失败。
 ***
+## Issue #7：对话生命周期与 Demo 流程契约
+
+### 背景与目标
+
+现有全局服务只有不可用对话占位边界，尚未固定剧情内容 ID、移动锁定、跳过/完成生命周期，也没有统一表达 Demo 成功、失败和主动退出的流程端口。本阶段补齐可由纯 C# 验证的契约与记录型适配器，不把具体 UI、场景、坏结局或存档规则塞入通用服务。
+
+### 范围
+
+- 定义稳定 `ContentId`、`StoryFlag`、`EndingId` 和 `DialogueRequest` 数据契约；
+- 将 `IDialogueService` 迁移为请求对象和明确 `DialogueResult` 生命周期结果；
+- 实现记录型对话适配器，验证播放、移动锁定、跳过、完成和非法请求边界；
+- 定义 `IDemoFlow`、`DemoRunResult` 和 `DemoFlowOperation`，实现记录型 Demo 进入、重试和退出适配器；
+- 验证 Demo 成功、失败和主动退出互斥，且流程不自动触发 `BadEnding` 或其他剧情规则；
+- 更新组合根默认服务、调用方和 EditMode 行为测试。
+
+### 非目标
+
+不创建剧情导入器、ScriptableObject 内容资产、正式 UI、音频播放、场景加载、Demo 玩法、解锁/完成持久化或坏结局判定；不添加通用 Demo 关卡流程、静态单例、兼容别名或隐式成功回退。
+
+### 验收与验证
+
+`ContentId` 和 `StoryFlag` 必须是稳定、可比较的纯值；非法对话请求必须返回明确失败；播放结束后必须解除移动锁定；Demo 结果必须区分成功、失败和主动退出。验证使用目标程序集编译、Unity EditMode 测试和既有 SampleScene PlayMode 烟测。
+***
+

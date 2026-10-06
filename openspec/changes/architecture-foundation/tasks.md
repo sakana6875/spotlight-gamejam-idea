@@ -74,3 +74,19 @@
 - [x] 使用 Unity Editor 执行 `SessionSmokeSceneSetup.Apply` 并保存 SampleScene；场景包含 `ArchitectureSmoke`，随后 PlayMode SampleScene 烟测通过
 - [x] 记录 Bootstrap、Menu、Hub、Demo、正式资源及未完成 Editor 验证限制：正式 UI、Input Actions、AudioMixer、文件存档和剧情资产仍未覆盖
 ***
+
+## Issue #7：对话生命周期与 Demo 流程
+
+- [x] 定义稳定 `ContentId`、`StoryFlag`、`EndingId` 和 `DialogueRequest` 数据契约
+- [x] 迁移 `IDialogueService` 生命周期接口和 `DialogueResult` 结果码
+- [x] 实现记录型对话适配器并覆盖移动锁定、跳过、完成和非法请求
+- [x] 迁移对话调用方、不可用适配器和组合根默认工厂
+- [x] 定义统一 `IDemoFlow`、`DemoRunResult` 和操作结果契约
+- [x] 实现记录型 Demo 进入、重试和退出适配器
+- [x] 验证成功、失败、主动退出互斥且不自动触发 `BadEnding`
+- [x] 添加 Dialogue、ContentId、StoryFlag 和 DemoFlow EditMode 行为测试
+- [x] 添加 Demo 结果、入口模式和生命周期边界测试
+- [x] 执行目标程序集编译：Domain、Application、Adapters、Composition、Tests.EditMode 均成功，0 警告、0 错误
+- [x] 执行 Unity EditMode 与 PlayMode 批处理测试：EditMode 26/26 通过；PlayMode `SessionSmokeTests` 1/1 通过，日志收到 `ArchitectureSmoke 收到 SessionInitializedEvent。`
+- [x] 执行 `openspec validate architecture-foundation` 并记录验证结果
+- [x] 记录 Issue #7 非目标：未实现剧情导入、正式 UI、Demo 玩法、存档持久化、坏结局判定和通用关卡流程
