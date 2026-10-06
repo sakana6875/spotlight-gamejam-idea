@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1de75ebbc1dd70f40a36edbb4e432cf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  volume: {fileID: 432819783}
+  volume: {fileID: 0}
   spotLight: {fileID: 955612693}
   girl: {fileID: 356713224}
   targetCamera: {fileID: 219069964}
@@ -188,6 +188,8 @@ MonoBehaviour:
   viewExpandMargin: 3
   inputAdapter: {fileID: 1197792413}
   ambienceAudio: {fileID: 0}
+  flowCarrier: {fileID: 246916793}
+  nextSceneId: Demo3_Act2
 --- !u!4 &106285668
 Transform:
   m_ObjectHideFlags: 0
@@ -340,6 +342,51 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
+--- !u!1 &246916792
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 246916794}
+  - component: {fileID: 246916793}
+  m_Layer: 0
+  m_Name: Demo3FlowCarrier
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &246916793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 246916792}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f3bfbadd76a87bf4ab702290f6fc5320, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  inputAdapter: {fileID: 1197792413}
+--- !u!4 &246916794
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 246916792}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1.0557034, y: -2.0730128, z: -0.10587547}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &356713219
 GameObject:
   m_ObjectHideFlags: 0
@@ -488,55 +535,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &432819782
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 432819784}
-  - component: {fileID: 432819783}
-  m_Layer: 0
-  m_Name: Global Volume
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &432819783
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 432819782}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_IsGlobal: 1
-  priority: 0
-  blendDistance: 0
-  weight: 1
-  sharedProfile: {fileID: 0}
---- !u!4 &432819784
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 432819782}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &955612692
 GameObject:
   m_ObjectHideFlags: 0
@@ -649,6 +647,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveAction: {fileID: -8674390043378723102, guid: 4eae57699b3a3e34592416f35a106df8, type: 3}
+  jumpAction: {fileID: 0}
+  interactAction: {fileID: 0}
   pauseAction: {fileID: 0}
 --- !u!4 &1197792414
 Transform:
@@ -695,8 +695,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   npcPrefab: {fileID: 8910564352677060466, guid: eacced2be40f0b540beecaa8d72eb11f, type: 3}
-  prewarm: 120
-  maxPoolSize: 320
+  prewarm: 500
+  maxPoolSize: 1000
   darknessStart: 0.75
 --- !u!4 &1384283715
 Transform:
@@ -723,4 +723,4 @@ SceneRoots:
   - {fileID: 356713224}
   - {fileID: 1384283715}
   - {fileID: 955612694}
-  - {fileID: 432819784}
+  - {fileID: 246916794}

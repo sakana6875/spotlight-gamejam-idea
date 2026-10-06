@@ -1,5 +1,6 @@
 using Healing.Demo3.Application;
 using Healing.Demo3.Data;
+using Healing.Demo3.Domain;
 using UnityEngine;
 
 namespace Healing.Demo3.Adapters
@@ -28,8 +29,13 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private Demo3InputAdapter inputAdapter;
         [SerializeField] private Demo3AmbienceAudioAdapter ambienceAudio; // 可选，未接则静音
 
+        [Header("演示衔接（可选）：跪倒演出结束后切到第二幕")]
+        [SerializeField] private Demo3FlowCarrier flowCarrier; // 场景内引用；留空则只上报结果
+        [SerializeField] private string nextSceneId = Demo3SceneIds.Act2Rescue;
+
         private IDemo3Services services;
         private Demo3Session session;
+        private bool handedOff;
 
         /// <summary>由 SessionRoot（唯一组合根）在场景加载后调用；未调用则走本地模式</summary>
         public void Configure(IDemo3Services s) => services = s;
@@ -62,6 +68,13 @@ namespace Healing.Demo3.Adapters
             girl.Apply();
             crowd.Sync(session.Sim, session.Pressure);
             visuals.Apply(session);
+
+            // 第一幕已完结 → 通过场景切换端口进入第二幕（Gameplay 不碰 SceneManager）
+            if (!handedOff && flowCarrier != null && session.Stage == Demo3Stage.Finished)
+            {
+                handedOff = true;
+                flowCarrier.GoTo(nextSceneId);
+            }
         }
 
         private void GetViewBounds(out Vector2 min, out Vector2 max)

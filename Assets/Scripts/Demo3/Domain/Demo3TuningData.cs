@@ -17,18 +17,18 @@ namespace Healing.Demo3.Domain
         public float AvoidRadius      = 2.8f;   // 回避触发距离（2.5~3 身位）
         public float SafeRadius       = 3.3f;   // 回避结束距离（略大于触发距离，形成滞回）
         public float GatherOuterRadius= 9f;     // 超过此距离视为"被挤在外圈"→ 游荡
-        public float AvoidSpeedMul    = 1.35f;  // NPC 回避速度 = 玩家速度 × 此值（120%~150%）
-        public float GatherSpeedMul   = 0.55f;  // NPC 聚集速度 = 玩家速度 × 此值（40%~70%）
+        public float AvoidSpeedMul    = 1.5f;  // NPC 回避速度 = 玩家速度 × 此值（120%~150%）
+        public float GatherSpeedMul   = 0.7f;  // NPC 聚集速度 = 玩家速度 × 此值（40%~70%）
         public float WanderSpeedMul   = 0.45f;  // 游荡 NPC 在屏幕边沿的移动速度倍率
         public float TurnResponse     = 0.2f;   // NPC 转向响应时间秒（0.1~0.3）
         public float TangentBias      = 0.45f;  // 回避方向上的侧向偏移强度（防直线四散）
-        public float SeparationRadius = 0.9f;   // NPC 之间的拥挤分离半径
+        public float SeparationRadius = 0.55f;   // NPC 之间的拥挤分离半径
         public float SeparationPush   = 2.2f;   // 拥挤分离推力
         public float EdgeBand         = 1.6f;   // "屏幕边沿附近"的判定带宽
 
         // ---- 人群生成 ----
-        public int   MaxCrowd      = 240;       // 人群上限
-        public float SpawnFullTime = 70f;       // 从 0 到满员的时长（秒）
+        public int   MaxCrowd      = 520;       // 人群上限
+        public float SpawnFullTime = 60f;       // 从 0 到满员的时长（秒）
         public float SpawnMargin   = 2.5f;      // 在视野外多少距离生成
 
         // ---- 压迫值 ----

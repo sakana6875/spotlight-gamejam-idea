@@ -17,8 +17,8 @@ namespace Healing.Demo3.Adapters
     public sealed class CrowdViewAdapter : MonoBehaviour
     {
         [SerializeField] private NpcAgentView npcPrefab;
-        [SerializeField] private int prewarm = 120;                  // 预热数量，避免演出中途实例化卡顿
-        [SerializeField] private int maxPoolSize = 320;              // 池上限（略大于 MaxCrowd）
+        [SerializeField] private int prewarm = 260;                  // 预热数量，避免演出中途实例化卡顿
+        [SerializeField] private int maxPoolSize = 560; // 略大于 MaxCrowd=520              // 池上限（略大于 MaxCrowd）
         [SerializeField, Range(0f, 1f), Tooltip("压迫值超过此值后人群开始隐入黑暗")]
         private float darknessStart = 0.75f;
 

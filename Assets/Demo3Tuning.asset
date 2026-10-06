@@ -24,8 +24,8 @@ MonoBehaviour:
   SeparationRadius: 0.9
   SeparationPush: 2.2
   EdgeBand: 1.6
-  MaxCrowd: 240
-  SpawnFullTime: 70
+  MaxCrowd: 1000
+  SpawnFullTime: 40
   SpawnMargin: 2.5
   PressureTimeRate: 0.01
   PressureCrowdRate: 0.00625

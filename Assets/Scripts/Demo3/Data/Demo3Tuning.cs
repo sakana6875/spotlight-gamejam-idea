@@ -18,19 +18,19 @@ namespace Healing.Demo3.Data
         public float AvoidRadius = 2.8f;
         public float SafeRadius = 3.3f;
         public float GatherOuterRadius = 9f;
-        public float AvoidSpeedMul = 1.35f;
-        public float GatherSpeedMul = 0.55f;
+        public float AvoidSpeedMul = 1.5f;   // 上限取值：回避更敏捷
+        public float GatherSpeedMul = 0.7f;   // 上限取值：收拢更快
         public float WanderSpeedMul = 0.45f;
         public float TurnResponse = 0.2f;
         [Tooltip("回避方向的侧向偏移强度，0=直线远离，越大弧线越明显")]
         public float TangentBias = 0.45f;
-        public float SeparationRadius = 0.9f;
+        public float SeparationRadius = 0.55f; // 更密，接近演示图效果
         public float SeparationPush = 2.2f;
         public float EdgeBand = 1.6f;
 
         [Header("人群生成")]
-        public int MaxCrowd = 240;
-        public float SpawnFullTime = 70f;
+        public int MaxCrowd = 520;              // 填满屏幕的密度
+        public float SpawnFullTime = 60f;
         public float SpawnMargin = 2.5f;
 
         [Header("压迫值")]
