@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6379f8217306d9b47a1ae8c4db801950, type: 3}
+  m_Name: Demo3Tuning
+  m_EditorClassIdentifier: 
+  PlayerBaseSpeed: 3
+  AvoidRadius: 2.8
+  SafeRadius: 3.3
+  GatherOuterRadius: 9
+  AvoidSpeedMul: 1.35
+  GatherSpeedMul: 0.55
+  WanderSpeedMul: 0.45
+  TurnResponse: 0.2
+  TangentBias: 0.45
+  SeparationRadius: 0.9
+  SeparationPush: 2.2
+  EdgeBand: 1.6
+  MaxCrowd: 240
+  SpawnFullTime: 70
+  SpawnMargin: 2.5
+  PressureTimeRate: 0.01
+  PressureCrowdRate: 0.00625
+  PressureCrowdReference: 200
+  CollapseDelay: 2.5
