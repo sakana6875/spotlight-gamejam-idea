@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
-using Spotlight.Adapters.Save;
+using Spotlight.Save;
 using Spotlight.Domain.Save;
 
 namespace Spotlight.Tests.EditMode
@@ -10,7 +10,7 @@ namespace Spotlight.Tests.EditMode
         [Test]
         public void EmptySave_ReturnsEmptyResult()
         {
-            InMemorySaveService saveService = new InMemorySaveService();
+            SaveService saveService = new SaveService();
 
             SnapshotResult result = saveService.LoadLatestSnapshot();
 
@@ -22,7 +22,7 @@ namespace Spotlight.Tests.EditMode
         [Test]
         public void SavingSameCheckpointId_ReplacesPreviousSnapshot()
         {
-            InMemorySaveService saveService = new InMemorySaveService();
+            SaveService saveService = new SaveService();
             saveService.SaveCheckpoint(CreateSnapshot("checkpoint_a", "hub", 10));
             saveService.SaveCheckpoint(CreateSnapshot("checkpoint_a", "demo1", 20));
 
@@ -37,11 +37,9 @@ namespace Spotlight.Tests.EditMode
         [Test]
         public void LoadingOlderSnapshot_DoesNotRemovePermanentProgress()
         {
-            InMemorySaveService saveService = new InMemorySaveService();
-            InMemoryProgressService progressService =
-                new InMemoryProgressService(saveService.PermanentProgress);
-            progressService.UnlockDemo("demo2");
-            progressService.SetStoryFlag("story_demo1_complete");
+            SaveService saveService = new SaveService();
+            saveService.UnlockDemo("demo2");
+            saveService.SetStoryFlag("story_demo1_complete");
             saveService.SaveCheckpoint(CreateSnapshot("checkpoint_a", "hub", 10));
             saveService.SaveCheckpoint(CreateSnapshot("checkpoint_b", "demo1", 20));
 
@@ -49,14 +47,14 @@ namespace Spotlight.Tests.EditMode
 
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(result.Snapshot.Checkpoint.SceneId, Is.EqualTo("hub"));
-            Assert.That(progressService.IsDemoUnlocked("demo2"), Is.True);
-            Assert.That(progressService.HasStoryFlag("story_demo1_complete"), Is.True);
+            Assert.That(saveService.IsDemoUnlocked("demo2"), Is.True);
+            Assert.That(saveService.HasStoryFlag("story_demo1_complete"), Is.True);
         }
 
         [Test]
         public void UnknownSnapshot_ReturnsNotFound()
         {
-            InMemorySaveService saveService = new InMemorySaveService();
+            SaveService saveService = new SaveService();
 
             SnapshotResult result = saveService.LoadSnapshot("missing");
 
@@ -67,25 +65,23 @@ namespace Spotlight.Tests.EditMode
         [Test]
         public void ResetSave_ClearsSnapshotsProgressAndRestoresSettings()
         {
-            InMemorySaveService saveService = new InMemorySaveService();
-            InMemoryProgressService progressService =
-                new InMemoryProgressService(saveService.PermanentProgress);
+            SaveService saveService = new SaveService();
+            saveService.UnlockDemo("demo1");
             saveService.SaveCheckpoint(CreateSnapshot("checkpoint_a", "hub", 10));
-            progressService.UnlockDemo("demo1");
             saveService.SaveSettings(new SettingsData(0.1f, 0.2f, 0.3f, 0.4f));
 
             SaveResult result = saveService.ResetSave();
 
             Assert.That(result.IsSuccess, Is.True);
             Assert.That(saveService.HasSave, Is.False);
-            Assert.That(progressService.IsDemoUnlocked("demo1"), Is.False);
+            Assert.That(saveService.IsDemoUnlocked("demo1"), Is.False);
             Assert.That(saveService.Settings.MasterVolume, Is.EqualTo(1f));
         }
 
         [Test]
         public void SaveSettings_PreservesStableAudioSettingValues()
         {
-            InMemorySaveService saveService = new InMemorySaveService();
+            SaveService saveService = new SaveService();
             SettingsData settings = new SettingsData(0.1f, 0.2f, 0.3f, 0.4f);
 
             SaveResult result = saveService.SaveSettings(settings);

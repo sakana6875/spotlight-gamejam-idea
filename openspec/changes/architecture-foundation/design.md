@@ -155,3 +155,34 @@ Unity API       → 对应 Adapter
 ```
 
 `SessionRoot` 继续负责服务创建和组装，但不扩展为万能游戏管理器；`EventBus` 只在出现真实的多订阅方事实通知时使用，不把所有方法都改成事件。
+## Issue #5 烟测设计
+
+`SessionSmokeEntry` 是临时场景适配器，不承担业务规则。它在 `Awake` 中从同一 GameObject 读取 `SessionRoot`，显式调用幂等 `Initialize()`，成功后订阅并发布 `SessionInitializedEvent`，再通过 `SessionServices` 调用各接口。场景流程使用 `SceneId.SampleScene`，存档使用稳定检查点数据，音频使用 `SFX` 通道，输入注册 `Interact`，对话以 `Unavailable` 作为已知边界。
+
+入口保持事件处理器引用并在销毁时解除订阅，避免跨场景的 `SessionRoot` 存活导致订阅泄漏。`[DefaultExecutionOrder(100)]` 只降低同对象生命周期顺序差异，不能替代缺失组合根校验。
+
+Editor 工具通过 `EditorSceneManager.OpenScene`、对象组件去重和 `SaveScene` 完成可重复装配；不手工写入复杂 Unity YAML。PlayMode 测试只读取入口的公开观察属性，EditMode 测试验证初始化事件的同步发布与解除订阅。
+由于 `Spotlight.Adapters` 已被 `Spotlight.Composition` 依赖，烟测入口不能放入 Adapters，否则会形成程序集循环引用。实际文件放在 `Assets/Scripts/Architecture/Composition/Smoke/SessionSmokeEntry.cs`，仍保持临时 Unity 适配器职责；它与 `SessionRoot` 同属 Composition 程序集，服务调用仍只依赖 `SessionServices` 接口。
+***
+***
+## Issue #7 对话与 Demo 设计
+
+稳定内容 ID 和剧情标记放在 `Spotlight.Domain.Story`，生命周期结果和端口放在 `Spotlight.Application.Services.Dialogue` 与 `Demo`；适配器只位于 `Spotlight.Adapters`。这样 Domain/Application 不依赖 Unity，Composition 仍可通过默认工厂注入具体实现。
+
+```text
+DialogueRequest(ContentId, LocksMovement)
+        ↓
+IDialogueService → DialogueResult
+        ↓
+RecordingDialogueService / UnavailableDialogueService
+
+IDemoFlow → DemoRunResult
+        ↓
+RecordingDemoFlow
+```
+
+`RecordingDialogueService` 用最小状态表达播放和移动锁定：只有有效请求能开始；跳过或完成结束播放并解除锁定；未播放操作返回 `NotPlaying`。`RecordingDemoFlow` 记录最近一次操作和参数，并只消费一次测试注入的下一个结果；默认结果为成功。它不调用场景、存档或剧情规则，因此 `BadEnding` 只保留稳定标识，不会被该端口触发。
+
+测试通过公开结果和状态验证行为，不依赖 Unity 场景对象或私有实现细节。Issue #7 仍不引入剧情导入、内容资产、正式 UI、Demo 状态机或通用关卡抽象。
+***
+

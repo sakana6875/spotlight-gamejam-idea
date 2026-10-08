@@ -185,3 +185,29 @@ Issue #4 不创建独立 `Spotlight.Contracts` 程序集。原 Issue 描述中�
 4. Issue #4 只验证顶层场景流程，不为未来多关卡场景创建占位资源、通用适配器或预留接口。
 5. 保留真实需要的 `SessionRoot`、存档/进度端口和 `ISceneFlow`；暂不扩展通用 EventBus、场景栈、Additive 场景编排或万能 Demo 管理器。
 6. 所有新增抽象必须有已确认调用方和独立行为验收，不能仅因为未来可能复用而加入。
+## Issue #5：架构骨架集成实施顺序
+
+1. 追加并校验本 Change 的 Issue #5 提案、规格、设计和任务。
+2. 增加纯 C# `SessionInitializedEvent`，保持初始化协调器不持有 EventBus。
+3. 实现 `SessionSmokeEntry`：复用同一对象上的 `SessionRoot`，发布同步事件并调用所有可验证服务端口。
+4. 实现 Editor 场景工具，通过 Unity API 幂等装配 `ArchitectureSmoke`，不手工修改 YAML。
+5. 更新 PlayMode asmdef，添加 PlayMode SampleScene 测试和 EventBus 解除订阅 EditMode 测试。
+6. 运行 OpenSpec 校验、Unity EditMode/PlayMode 批处理验证，并在 Unity Editor 中运行 SampleScene（若工具可用）。
+7. 将实际命令、测试数量、场景运行结果和未覆盖范围写回本 Change。
+
+实现不得创建正式场景、修改 Build Settings 或引入静态服务入口。
+实现注意：`SessionSmokeEntry` 实际落在 Composition 程序集的 `Composition/Smoke/`，因为 Adapters 已被 Composition 依赖，将入口放入 Adapters 会违反程序集无环约束。
+***
+## Issue #7：对话生命周期与 Demo 流程实施顺序
+
+1. 读取现有 `IDialogueService`、组合根默认工厂、不可用适配器和调用方，固定请求对象与结果码迁移边界。
+2. 在 Domain Story 增加稳定 `ContentId`、`StoryFlag`、`EndingId` 和 `DialogueRequest`；在 Application Dialogue 增加 `DialogueResult`，再更新 `IDialogueService`。
+3. 实现 `RecordingDialogueService`，只记录请求和生命周期状态，明确处理移动锁定、非法内容和未播放操作。
+4. 定义 `IDemoFlow` 与 `DemoRunResult`，实现 `RecordingDemoFlow` 的进入、重试、退出和一次性结果注入。
+5. 迁移组合根和现有适配器调用方，保持 `UnavailableDialogueService` 对合法内容的不可用结果。
+6. 添加 EditMode 行为测试，覆盖稳定值、对话生命周期、移动锁定、Demo 入口/重试/退出及成功/失败/主动退出边界；不测试私有字段或调用次数。
+7. 执行 OpenSpec 校验、目标程序集编译、Unity EditMode 测试和既有 PlayMode 烟测；将实际测试数量与限制写回本 Change。
+
+Issue #7 不创建剧情资产、导入器、正式 UI、场景流程、存档字段、坏结局判定或通用 Demo 关卡系统。
+***
+

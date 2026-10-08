@@ -3,9 +3,7 @@
     "rootNamespace": "Spotlight.Tests.PlayMode",
     "references": [
         "Spotlight.Domain",
-        "Spotlight.Application",
-        "Spotlight.Adapters",
-        "Spotlight.Features"
+        "Spotlight.Game"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
