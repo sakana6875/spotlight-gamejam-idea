@@ -1,0 +1,16 @@
+{
+    "name": "Spotlight.Game",
+    "rootNamespace": "Spotlight",
+    "references": [
+        "Spotlight.Domain"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

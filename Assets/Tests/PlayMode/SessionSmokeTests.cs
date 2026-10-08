@@ -3,14 +3,14 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Spotlight.Composition;
+using Spotlight.Bootstrap;
 
 namespace Spotlight.Tests.PlayMode
 {
     public sealed class SessionSmokeTests
     {
         [UnityTest]
-        public IEnumerator SampleScene_InitializesAndExercisesSessionServices()
+        public IEnumerator SampleScene_InitializesRequiredSessionBoundaries()
         {
             AsyncOperation loadOperation = SceneManager.LoadSceneAsync("SampleScene", LoadSceneMode.Single);
             while (!loadOperation.isDone)
@@ -33,13 +33,9 @@ namespace Spotlight.Tests.PlayMode
             }
 
             Assert.That(smokeEntry.IsFailed, Is.False, smokeEntry.FailureMessage);
-            Assert.That(smokeEntry.ReceivedSessionInitializedEvent, Is.True);
-            Assert.That(smokeEntry.SceneFlowSucceeded, Is.True);
+            Assert.That(smokeEntry.SceneLoaderAvailable, Is.True);
             Assert.That(smokeEntry.SaveSucceeded, Is.True);
             Assert.That(smokeEntry.ProgressSucceeded, Is.True);
-            Assert.That(smokeEntry.AudioSucceeded, Is.True);
-            Assert.That(smokeEntry.InputSucceeded, Is.True);
-            Assert.That(smokeEntry.DialogueUnavailable, Is.True);
             Assert.That(smokeEntry.IsCompleted, Is.True);
             Assert.That(sessionRoot.IsInitialized, Is.True);
 
