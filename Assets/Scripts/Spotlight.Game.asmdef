@@ -2,6 +2,7 @@
     "name": "Spotlight.Game",
     "rootNamespace": "Spotlight",
     "references": [
+        "Unity.InputSystem",
         "Spotlight.Domain"
     ],
     "includePlatforms": [],
