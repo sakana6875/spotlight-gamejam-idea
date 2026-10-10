@@ -21,6 +21,7 @@ namespace Spotlight.Bootstrap
             Initialize();
         }
 
+
         /// <summary>
         /// 创建当前运行周期的服务；重复调用不会创建第二组服务。
         /// </summary>
@@ -34,7 +35,7 @@ namespace Spotlight.Bootstrap
             try
             {
                 _saveService = new SaveService();
-                _sceneLoader = new SceneLoader();
+                _sceneLoader = new SceneLoader(new SceneCatalog());
                 IsInitialized = true;
                 DontDestroyOnLoad(gameObject);
                 return true;
@@ -47,5 +48,6 @@ namespace Spotlight.Bootstrap
                 return false;
             }
         }
+
     }
 }
