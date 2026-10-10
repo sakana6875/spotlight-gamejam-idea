@@ -41,6 +41,9 @@ namespace Spotlight.Demos.Demo2
         [FormerlySerializedAs("groundLayer")]
         [SerializeField] private LayerMask _groundLayer;
 
+        [Header("运行状态")]
+        [SerializeField] private Demo2SimulationController _simulationController;
+
         private Rigidbody2D _rigidbody;
         private GameInputActions _input;
         private float _horizontalDirection;
@@ -102,9 +105,9 @@ namespace Spotlight.Demos.Demo2
                 return;
             }
 
-            if (_input.Demo2.SwitchView.WasPressedThisFrame())
+            if (IsGameplayFrozen)
             {
-                ToggleViewMode();
+                ClearMovementState();
                 return;
             }
 
@@ -121,7 +124,7 @@ namespace Spotlight.Demos.Demo2
 
         private void FixedUpdate()
         {
-            if (!_isConfigured)
+            if (!_isConfigured || IsGameplayFrozen)
             {
                 return;
             }
@@ -149,10 +152,32 @@ namespace Spotlight.Demos.Demo2
             _jumpRequested = false;
         }
 
+        private bool IsGameplayFrozen => _simulationController != null && _simulationController.IsGameplayFrozen;
+
+        private void ClearMovementState()
+        {
+            _rigidbody.velocity = Vector2.zero;
+            _horizontalDirection = 0f;
+            _topMovementDirection = Vector2.zero;
+            _previousMoveInput = Vector2.zero;
+            _jumpRequested = false;
+            _isGrounded = false;
+        }
+
+        private void SetPositionImmediately(Vector2 position)
+        {
+            Vector3 transformPosition = transform.position;
+            transformPosition.x = position.x;
+            transformPosition.y = position.y;
+            transform.position = transformPosition;
+            _rigidbody.position = position;
+            Physics2D.SyncTransforms();
+        }
+
         /// <summary>
-        /// 切换玩家的移动规则，并清除旧模式遗留的速度与输入状态。
+        /// 以指定位置进入目标视图，确保侧视重力恢复前玩家已位于有效落点。
         /// </summary>
-        public void SetViewMode(Demo2ViewMode viewMode)
+        public void SetViewMode(Demo2ViewMode viewMode, Vector2 position)
         {
             if (_viewMode == viewMode)
             {
@@ -160,13 +185,9 @@ namespace Spotlight.Demos.Demo2
             }
 
             _viewMode = viewMode;
+            ClearMovementState();
+            SetPositionImmediately(position);
             _rigidbody.gravityScale = _viewMode == Demo2ViewMode.Side ? _sideGravityScale : 0f;
-            _rigidbody.velocity = Vector2.zero;
-            _horizontalDirection = 0f;
-            _topMovementDirection = Vector2.zero;
-            _previousMoveInput = Vector2.zero;
-            _jumpRequested = false;
-            _isGrounded = false;
             ViewModeChanged?.Invoke(_viewMode);
         }
 
@@ -229,11 +250,6 @@ namespace Spotlight.Demos.Demo2
             }
 
             _previousMoveInput = moveInput;
-        }
-
-        private void ToggleViewMode()
-        {
-            SetViewMode(_viewMode == Demo2ViewMode.Side ? Demo2ViewMode.Top : Demo2ViewMode.Side);
         }
 
         private float CalculateJumpSpeed()
