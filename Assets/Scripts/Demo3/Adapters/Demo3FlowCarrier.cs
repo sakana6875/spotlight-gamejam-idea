@@ -50,6 +50,14 @@ namespace Healing.Demo3.Adapters
         private IEnumerator LoadRoutine(string sceneId)
         {
             var op = SceneManager.LoadSceneAsync(sceneId, LoadSceneMode.Single);
+            if (op == null)
+            {
+                // 场景名拼写错误或未加入 Build Settings 时 LoadSceneAsync 返回 null，
+                // 不能继续轮询（否则空引用），给出可操作的错误信息后中止切换。
+                Debug.LogError($"[Demo3] 场景 '{sceneId}' 加载失败：请检查场景文件名是否逐字一致，" +
+                               "且已在 File → Build Settings 中加入（当前应为 Scenes/Demo3/Act1 ~ Act4）。");
+                yield break;
+            }
             while (!op.isDone) yield return null;
             yield return null; // 等场景根 Start
             InjectServicesInto(services);

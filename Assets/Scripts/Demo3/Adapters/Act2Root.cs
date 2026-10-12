@@ -29,8 +29,18 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private List<JumpZoneData> jumpZones = new List<JumpZoneData>();
         [SerializeField] private float jumpApexVisual = 1.2f;
 
+        [Header("区域名称显示（看客区域不显示；矩形按实际场景坐标微调）")]
+        [SerializeField] private AreaNameBannerView areaNameBanner;
+        [SerializeField] private List<AreaNameZone> areaZones = new List<AreaNameZone>
+        {
+            new AreaNameZone("界水",     new Rect(-8f, 20f, 16f, 40f)),
+            new AreaNameZone("深根灵域", new Rect(-8f, 60f, 16f, 45f)),
+            new AreaNameZone("灵苑",     new Rect(-8f, 105f, 16f, 45f)), // 第一次来：灵苑
+        };
+
         private IDemo3Services services;
         private Act2Session session;
+        private AreaNameAnnouncer areaAnnouncer;
         private TrailRecorder followerTrails; // 牵手跟随者的脚印（沙地段女孩脚印）
         private ActWalkSession trailHookedFor; // 当前已订阅视图的轨迹记录器归属
 
@@ -60,6 +70,12 @@ namespace Healing.Demo3.Adapters
 
             services.Input.JumpPressed += OnJumpPressed;
             introDirector.Play(() => session.NotifyIntroFinished());
+
+            if (areaNameBanner != null && areaZones.Count > 0)
+            {
+                areaAnnouncer = new AreaNameAnnouncer(areaZones);
+                areaAnnouncer.Entered += areaNameBanner.Show;
+            }
         }
 
         private void OnJumpPressed()
@@ -69,13 +85,20 @@ namespace Healing.Demo3.Adapters
 
         private void OnSegmentChanged(Act2SegmentChangedEvent e)
         {
-            if (e.Segment == Act2Segment.Mushrooms)
+            if (e.Segment == Act2Segment.WalkUp)
+            {
+                boy.SetHandholding(true);              // 男孩牵起女孩，进入"牵手跑动"动画状态
+                girl.SetHandholding(true);
+            }
+            else if (e.Segment == Act2Segment.Mushrooms)
                 StartCoroutine(MushroomIntroRoutine());      // 女孩松手 → 跳上第一个蘑菇顶（播片）
             else if (e.Segment == Act2Segment.ToTree)
             {
                 handhold.SetFollower(boy.transform);          // 第三段女孩领队、男孩跟随
                 handhold.Snap(session.Player.Position, boy.transform.position);
                 handhold.Active = true;
+                boy.SetHandholding(true);                     // 重新牵手
+                girl.SetHandholding(true);
             }
         }
 
@@ -115,6 +138,8 @@ namespace Healing.Demo3.Adapters
         private IEnumerator MushroomIntroRoutine()
         {
             handhold.Active = false; // 女孩主动松手
+            boy.SetHandholding(false);
+            girl.SetHandholding(false);
             Vector2 from = girl.transform.position;
             Vector2 to = mushrooms.Count > 0 ? mushrooms[0].transform.position : from + Vector2.up * 3f;
             for (float t = 0f; t < 1f;)
@@ -185,6 +210,7 @@ namespace Healing.Demo3.Adapters
             }
 
             cameraRig.Apply(session.Player.Position);
+            areaAnnouncer?.Tick(session.Player.Position);
         }
 
         private void OnDestroy()

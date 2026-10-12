@@ -36,8 +36,19 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private AmbientCrowdAdapter ambientCrowd;
         [SerializeField] private CanvasGroup fadeToBlack;        // 晕倒黑屏
 
+        [Header("区域名称显示（看客区域不显示；矩形按实际场景坐标微调）")]
+        [SerializeField] private AreaNameBannerView areaNameBanner;
+        [SerializeField] private List<AreaNameZone> areaZones = new List<AreaNameZone>
+        {
+            new AreaNameZone("潜苑",     new Rect(-8f, -20f, 16f, 30f)),   // 第二次回来：潜苑
+            new AreaNameZone("深根灵域", new Rect(-8f, -120f, 16f, 60f)),
+            new AreaNameZone("界水",     new Rect(-8f, -180f, 16f, 60f)),
+            new AreaNameZone("浮游之海", new Rect(10f, -110f, 24f, 30f)),  // 隐藏 L1
+        };
+
         private IDemo3Services services;
         private Act3Session session;
+        private AreaNameAnnouncer areaAnnouncer;
 
         public override void Configure(IDemo3Services s)
         {
@@ -70,6 +81,12 @@ namespace Healing.Demo3.Adapters
 
             services.Input.JumpPressed += OnJumpPressed;
             services.Input.InteractPressed += OnInteractPressed;
+
+            if (areaNameBanner != null && areaZones.Count > 0)
+            {
+                areaAnnouncer = new AreaNameAnnouncer(areaZones);
+                areaAnnouncer.Entered += areaNameBanner.Show;
+            }
         }
 
         private void OnJumpPressed() => session?.TryBeginJump();
@@ -132,6 +149,7 @@ namespace Healing.Demo3.Adapters
             }
             cameraRig.Apply(session.Player.Position);
             ambientCrowd?.Tick(dt);
+            areaAnnouncer?.Tick(session.Player.Position);
         }
 
         private void OnDestroy()

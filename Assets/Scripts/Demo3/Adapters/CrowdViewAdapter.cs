@@ -7,7 +7,8 @@ namespace Healing.Demo3.Adapters
 {
     /// <summary>
     /// 人群视图适配：把 CrowdSimulation 的纯数据同步为 NPC 表现体。
-    /// NPC GameObject 的创建/回收使用 Unity 内置对象池 UnityEngine.Pool.ObjectPool：
+    /// 男/女看客是两个独立预制体（各自挂自己的 Animator 与四方向走动动画），
+    /// 按模拟层的 Variant 从各自的对象池取用：
     ///  - Get()     取出（自动激活）
     ///  - Release() 归还（自动禁用并回到池内）
     ///  - 池满时超出 maxSize 的实例自动销毁，防止人群失控膨胀
@@ -16,32 +17,40 @@ namespace Healing.Demo3.Adapters
     /// </summary>
     public sealed class CrowdViewAdapter : MonoBehaviour
     {
-        [SerializeField] private NpcAgentView npcPrefab;
-        [SerializeField] private int prewarm = 260;                  // 预热数量，避免演出中途实例化卡顿
-        [SerializeField] private int maxPoolSize = 560; // 略大于 MaxCrowd=520              // 池上限（略大于 MaxCrowd）
+        [Header("看客预制体（男/女各一个，各自挂好自己的 Animator）")]
+        [SerializeField] private NpcAgentView malePrefab;
+        [SerializeField] private NpcAgentView femalePrefab;
+        [SerializeField] private int prewarmPerPrefab = 130;         // 每个预制体预热数量，避免演出中途实例化卡顿
+        [SerializeField] private int maxPoolSize = 560;              // 池上限（略大于 MaxCrowd）
         [SerializeField, Range(0f, 1f), Tooltip("压迫值超过此值后人群开始隐入黑暗")]
-        private float darknessStart = 0.75f;
+        private float darknessStart = 0.8f;                          // 默认 0.8：前中期保证看客清晰可见
 
-        private ObjectPool<NpcAgentView> pool;
+        private ObjectPool<NpcAgentView> malePool;
+        private ObjectPool<NpcAgentView> femalePool;
         private readonly Dictionary<int, NpcAgentView> active = new Dictionary<int, NpcAgentView>(256);
+        private readonly Dictionary<int, byte> activeVariant = new Dictionary<int, byte>(256); // 归还时找对应的池
         private readonly HashSet<int> seen = new HashSet<int>();
         private readonly List<int> toRelease = new List<int>(32);
 
         private void Awake()
         {
-            pool = new ObjectPool<NpcAgentView>(
-                createFunc: CreateOne,
-                actionOnGet: OnGet,
-                actionOnRelease: OnRelease,
-                actionOnDestroy: OnPoolDestroy,
-                collectionCheck: true,          // 编辑器下检测重复归还等错误用法
-                defaultCapacity: prewarm,
-                maxSize: maxPoolSize);
+            // 自检看客预制体的 Animator 参数（只对预制体检查一次，不对池内实例逐个检查）
+            ValidatePrefab(malePrefab);
+            ValidatePrefab(femalePrefab);
+
+            malePool = MakePool(malePrefab);
+            femalePool = MakePool(femalePrefab);
 
             // 预热：提前实例化，首波人群入场不掉帧
-            var warm = new List<NpcAgentView>(prewarm);
-            for (int i = 0; i < prewarm; i++) warm.Add(pool.Get());
-            foreach (var v in warm) pool.Release(v);
+            Prewarm(malePool);
+            Prewarm(femalePool);
+        }
+
+        private static void ValidatePrefab(NpcAgentView prefab)
+        {
+            if (prefab == null) return;
+            var anim = prefab.GetComponentInChildren<Animator>();
+            Demo3AnimParams.Validate(anim, prefab, needPosture: false, needHandhold: false);
         }
 
         public void Sync(CrowdSimulation sim, float pressure)
@@ -58,8 +67,9 @@ namespace Healing.Demo3.Adapters
                 seen.Add(a.Id);
                 if (!active.TryGetValue(a.Id, out var view))
                 {
-                    view = pool.Get();
+                    view = (a.Variant == 0 ? malePool : femalePool).Get(); // 按性别从对应预制体的池取
                     active.Add(a.Id, view);
+                    activeVariant.Add(a.Id, a.Variant);
                 }
                 view.SetPosition(a.Position);
                 view.SetVelocity(a.Velocity);
@@ -71,16 +81,40 @@ namespace Healing.Demo3.Adapters
                 if (!seen.Contains(kv.Key)) toRelease.Add(kv.Key);
             foreach (int id in toRelease)
             {
-                pool.Release(active[id]);
+                byte variant = activeVariant[id];
+                (variant == 0 ? malePool : femalePool).Release(active[id]);
                 active.Remove(id);
+                activeVariant.Remove(id);
             }
         }
 
         // ---- 对象池回调 ----
 
-        private NpcAgentView CreateOne()
+        private ObjectPool<NpcAgentView> MakePool(NpcAgentView prefab)
         {
-            var v = Instantiate(npcPrefab, transform);
+            if (prefab == null)
+                Debug.LogError("[Demo3] CrowdViewAdapter 缺少看客预制体（male/female 两个都要拖）。");
+            return new ObjectPool<NpcAgentView>(
+                createFunc: () => CreateOne(prefab),
+                actionOnGet: OnGet,
+                actionOnRelease: OnRelease,
+                actionOnDestroy: OnPoolDestroy,
+                collectionCheck: true,          // 编辑器下检测重复归还等错误用法
+                defaultCapacity: prewarmPerPrefab,
+                maxSize: maxPoolSize);
+        }
+
+        private void Prewarm(ObjectPool<NpcAgentView> pool)
+        {
+            if (pool == null) return;
+            var warm = new List<NpcAgentView>(prewarmPerPrefab);
+            for (int i = 0; i < prewarmPerPrefab; i++) warm.Add(pool.Get());
+            foreach (var v in warm) pool.Release(v);
+        }
+
+        private NpcAgentView CreateOne(NpcAgentView prefab)
+        {
+            var v = Instantiate(prefab, transform);
             v.gameObject.SetActive(false);
             return v;
         }
@@ -100,7 +134,8 @@ namespace Healing.Demo3.Adapters
 
         private void OnDestroy()
         {
-            pool?.Dispose(); // 清空池并销毁池内未使用的实例
+            malePool?.Dispose();    // 清空池并销毁池内未使用的实例
+            femalePool?.Dispose();
         }
     }
 }

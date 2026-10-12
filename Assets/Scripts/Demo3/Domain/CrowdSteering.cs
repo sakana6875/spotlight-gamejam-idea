@@ -13,6 +13,7 @@ namespace Healing.Demo3.Domain
         public Vector2 Velocity;
         public CrowdNpcState State;
         public float SideSign; // +1 / -1：侧向偏移方向（生成时随机，终身不变）
+        public byte Variant;   // 0=男看客，1=女看客（生成时随机，终身不变；仅用于表现层选外形）
     }
 
     /// <summary>一帧人群解算所需的只读上下文</summary>

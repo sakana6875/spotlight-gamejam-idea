@@ -6,29 +6,40 @@ namespace Healing.Demo3.Adapters
 {
     /// <summary>
     /// 第三幕的无视看客（纯表现）：原地站立或微微挪动，不回避、不追逐，
-    /// 女孩从他们之间穿过。少量 NPC 使用"像男孩"的背影变体（外形有区别）。
+    /// 女孩从他们之间穿过。男/女看客为两个独立预制体（各自挂自己的 Animator）；
+    /// 少量 NPC 使用"像男孩"的背影变体（外形有区别）。
     /// 没有任何玩法规则，因此不需要 Domain/Session。
     /// </summary>
     public sealed class AmbientCrowdAdapter : MonoBehaviour
     {
-        [SerializeField] private NpcAgentView npcPrefab;
+        [SerializeField] private NpcAgentView malePrefab;    // 男看客预制体
+        [SerializeField] private NpcAgentView femalePrefab;  // 女看客预制体
         [SerializeField] private int count = 160;
         [SerializeField] private Rect area;
         [SerializeField] private float driftSpeed = 0.15f;   // 极慢地挪动
         [SerializeField] private Sprite[] lookalikeSprites;  // "像男孩"的背影变体（有区别）
         [SerializeField, Range(0f, 0.2f)] private float lookalikeRatio = 0.05f;
 
-        private ObjectPool<NpcAgentView> pool;
+        private ObjectPool<NpcAgentView> malePool;
+        private ObjectPool<NpcAgentView> femalePool;
         private readonly List<Vector2> driftTargets = new List<Vector2>();
         private readonly List<NpcAgentView> views = new List<NpcAgentView>();
         private bool spawned;
 
         private void Awake()
         {
-            pool = new ObjectPool<NpcAgentView>(
+            malePool = MakePool(malePrefab);
+            femalePool = MakePool(femalePrefab);
+        }
+
+        private ObjectPool<NpcAgentView> MakePool(NpcAgentView prefab)
+        {
+            if (prefab == null)
+                Debug.LogError("[Demo3] AmbientCrowdAdapter 缺少看客预制体（male/female 两个都要拖）。");
+            return new ObjectPool<NpcAgentView>(
                 createFunc: () =>
                 {
-                    var v = Instantiate(npcPrefab, transform);
+                    var v = Instantiate(prefab, transform);
                     v.gameObject.SetActive(false);
                     return v;
                 },
@@ -44,7 +55,7 @@ namespace Healing.Demo3.Adapters
             spawned = true;
             for (int i = 0; i < count; i++)
             {
-                var v = pool.Get();
+                var v = (Random.value < 0.5f ? malePool : femalePool).Get(); // 男女各半
                 v.SetPosition(RandomPointIn());
                 views.Add(v);
                 driftTargets.Add(RandomPointIn());
@@ -65,15 +76,26 @@ namespace Healing.Demo3.Adapters
             {
                 Vector2 pos = views[i].transform.position;
                 if ((driftTargets[i] - pos).sqrMagnitude < 0.02f)
+                {
                     driftTargets[i] = RandomPointIn();
+                    views[i].SetVelocity(Vector2.zero); // 到位 → Idle
+                }
                 else
-                    views[i].SetPosition(Vector2.MoveTowards(pos, driftTargets[i], driftSpeed * dt));
+                {
+                    Vector2 next = Vector2.MoveTowards(pos, driftTargets[i], driftSpeed * dt);
+                    views[i].SetVelocity((next - pos) / Mathf.Max(1e-5f, dt)); // 喂速度 → 走动向
+                    views[i].SetPosition(next);
+                }
             }
         }
 
         private Vector2 RandomPointIn() =>
             new Vector2(Random.Range(area.xMin, area.xMax), Random.Range(area.yMin, area.yMax));
 
-        private void OnDestroy() => pool?.Dispose();
+        private void OnDestroy()
+        {
+            malePool?.Dispose();
+            femalePool?.Dispose();
+        }
     }
 }

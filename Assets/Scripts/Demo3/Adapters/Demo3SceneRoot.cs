@@ -24,6 +24,8 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private Demo3VisualBinder visuals;
         [SerializeField] private Camera targetCamera;
         [SerializeField] private float viewExpandMargin = 3f; // 模拟范围比视野外扩，保证边沿游荡生效
+        [SerializeField] private float playerEdgePadding = 0.6f; // 女孩活动边界比镜头视野内缩（留出身位）
+        [SerializeField] private float crowdExtraMargin = 1.5f;  // 看客场地边界比镜头视野外扩（界外不再后退）
 
         [Header("输入与音频（场景内适配器）")]
         [SerializeField] private Demo3InputAdapter inputAdapter;
@@ -31,7 +33,6 @@ namespace Healing.Demo3.Adapters
 
         [Header("演示衔接（可选）：跪倒演出结束后切到第二幕")]
         [SerializeField] private Demo3FlowCarrier flowCarrier; // 场景内引用；留空则只上报结果
-        [SerializeField] private string nextSceneId = Demo3SceneIds.Act2Rescue;
 
         private IDemo3Services services;
         private Demo3Session session;
@@ -55,7 +56,27 @@ namespace Healing.Demo3.Adapters
             }
 
             session = new Demo3Session(tuning.ToData(), services.Audio, services.Run, services.Bus);
+            SetupStageBounds();
             girl.Bind(session);
+        }
+
+        /// <summary>
+        /// 第一幕场地边界（按初始镜头视野，一次性设置）：
+        ///  - 女孩：限制在镜头区域内（内缩 playerEdgePadding），无法走出；
+        ///  - 看客：外扩 crowdExtraMargin 的场地边界，被挤压到边界后不再后退。
+        /// </summary>
+        private void SetupStageBounds()
+        {
+            float halfH = targetCamera.orthographicSize;
+            float halfW = halfH * targetCamera.aspect;
+            Vector2 c = targetCamera.transform.position;
+
+            float pw = Mathf.Max(0.5f, halfW - playerEdgePadding);
+            float ph = Mathf.Max(0.5f, halfH - playerEdgePadding);
+            session.PlayerBounds = new Rect(c.x - pw, c.y - ph, pw * 2f, ph * 2f);
+
+            session.Sim.BoundsMin = c + new Vector2(-halfW - crowdExtraMargin, -halfH - crowdExtraMargin);
+            session.Sim.BoundsMax = c + new Vector2(halfW + crowdExtraMargin, halfH + crowdExtraMargin);
         }
 
         private void Update()
@@ -70,10 +91,11 @@ namespace Healing.Demo3.Adapters
             visuals.Apply(session);
 
             // 第一幕已完结 → 通过场景切换端口进入第二幕（Gameplay 不碰 SceneManager）
+            // 目标场景名只认 Demo3SceneIds 常量，不走序列化字段（避免场景里残留旧值）
             if (!handedOff && flowCarrier != null && session.Stage == Demo3Stage.Finished)
             {
                 handedOff = true;
-                flowCarrier.GoTo(nextSceneId);
+                flowCarrier.GoTo(Demo3SceneIds.Act2Rescue);
             }
         }
 

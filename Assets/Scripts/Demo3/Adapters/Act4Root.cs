@@ -32,8 +32,19 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private EndingDirector endingDirector;
         [SerializeField] private List<Rect> particleEmitZones = new List<Rect>(); // 各区域激发范围
 
+        [Header("区域名称显示（看客区域不显示；矩形按实际场景坐标微调）")]
+        [SerializeField] private AreaNameBannerView areaNameBanner;
+        [SerializeField] private List<AreaNameZone> areaZones = new List<AreaNameZone>
+        {
+            new AreaNameZone("界水",     new Rect(-8f, -180f, 16f, 60f)),
+            new AreaNameZone("深根灵域", new Rect(-8f, -120f, 16f, 60f)),
+            new AreaNameZone("潜苑",     new Rect(-8f, -20f, 16f, 30f)),    // 第二次回来：潜苑
+            new AreaNameZone("无潮之岸", new Rect(10f, -100f, 24f, 30f)),   // 隐藏 L2
+        };
+
         private IDemo3Services services;
         private Act4Session session;
+        private AreaNameAnnouncer areaAnnouncer;
 
         public override void Configure(IDemo3Services s)
         {
@@ -61,6 +72,12 @@ namespace Healing.Demo3.Adapters
                                         : MushroomPlatformView.Visibility.Faint);
 
             services.Input.JumpPressed += OnJumpPressed;
+
+            if (areaNameBanner != null && areaZones.Count > 0)
+            {
+                areaAnnouncer = new AreaNameAnnouncer(areaZones);
+                areaAnnouncer.Entered += areaNameBanner.Show;
+            }
         }
 
         private void OnJumpPressed() => session?.TryBeginJump();
@@ -111,6 +128,7 @@ namespace Healing.Demo3.Adapters
             }
 
             cameraRig.Apply(session.Player.Position);
+            areaAnnouncer?.Tick(session.Player.Position);
         }
 
         private Vector2 AmbientEmitPos()

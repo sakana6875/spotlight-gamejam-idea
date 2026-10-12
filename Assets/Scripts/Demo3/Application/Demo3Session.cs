@@ -32,6 +32,12 @@ namespace Healing.Demo3.Application
         public float Elapsed => pressure.Elapsed;
         public Demo3AudioMix CurrentMix { get; private set; }
 
+        /// <summary>
+        /// 女孩可活动区域（由场景根按镜头视野设置，默认近似无限大）。
+        /// 需求：女孩被困在摄像机区域内，无法走出。
+        /// </summary>
+        public Rect PlayerBounds = new Rect(-10000f, -10000f, 20000f, 20000f);
+
         public Demo3Session(Demo3TuningData tuning, IDemo3Audio audio, IDemoRun run, IEventBus bus)
         {
             t = tuning ?? throw new ArgumentNullException(nameof(tuning));
@@ -69,6 +75,7 @@ namespace Healing.Demo3.Application
                 float speed = t.PlayerBaseSpeed * Gait.SpeedMultiplier;
                 PlayerVelocity = smoothedMove * speed;
                 PlayerPosition += PlayerVelocity * dt;
+                PlayerPosition = ClampToRect(PlayerPosition, PlayerBounds); // 困在镜头区域内
 
                 Sim.Tick(dt, PlayerPosition, PlayerVelocity, viewMin, viewMax, pressure.Value);
 
@@ -116,6 +123,9 @@ namespace Healing.Demo3.Application
             collapseTimer = t.CollapseDelay;
             bus.Publish(new Demo3StageChangedEvent(Demo3Stage.Collapsing));
         }
+
+        private static Vector2 ClampToRect(Vector2 p, Rect r) =>
+            new Vector2(Mathf.Clamp(p.x, r.xMin, r.xMax), Mathf.Clamp(p.y, r.yMin, r.yMax));
 
         private void PublishFactsThrottled(float dt)
         {

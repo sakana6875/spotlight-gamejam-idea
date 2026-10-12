@@ -52,6 +52,7 @@ namespace Healing.Demo3.Adapters
                 sister.Apply(near, Vector2.zero);
                 yield return new WaitForSeconds(0.8f);
                 Trigger(sister, HatHash);       // 摘帽给女孩戴上（发饰露出的特写在动画里）
+                girl.SetAppearance(0);          // 美术交付：0=带帽子形象
                 yield return new WaitForSeconds(2.0f);
                 Trigger(sister, HugHash);
                 yield return new WaitForSeconds(1.5f);

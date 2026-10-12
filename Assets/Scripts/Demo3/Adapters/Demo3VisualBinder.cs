@@ -26,12 +26,12 @@ namespace Healing.Demo3.Adapters
 
         [Header("扭曲（待定的轻量方案）")]
         [SerializeField] private bool enableDistortion = true;
-        [SerializeField] private float maxLensDistortion = -0.25f;
-        [SerializeField] private float maxChromaticAberration = 0.35f;
+        [SerializeField] private float maxLensDistortion = -0.18f;      // 轻度即可，太强会看不清人群
+        [SerializeField] private float maxChromaticAberration = 0.25f;
 
         [Header("暗角与灯光")]
         [SerializeField] private float vignetteStart = 0.12f;
-        [SerializeField] private float vignetteEnd = 0.8f;
+        [SerializeField] private float vignetteEnd = 0.45f;   // 0.8 会吞掉人群，0.45 仍能看清看客剪影
         [SerializeField] private float spotIntensityStart = 0.4f;
         [SerializeField] private float spotIntensityEnd = 1.6f;
         [SerializeField] private float spotRadiusStart = 6f;
