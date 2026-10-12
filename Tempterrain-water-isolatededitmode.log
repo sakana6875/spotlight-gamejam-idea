@@ -1,0 +1,44 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-wwy" at "2026-10-11T15:30:39.6365253Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 29616, path: "C:/Program Files/Unity Hub/UnityLicensingClient_V1/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Error: HandshakeResponse reported an error:
+	ResponseCode: 505
+	ResponseStatus: Unsupported protocol version '1.16.2'.
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-wwy"
+[Licensing::IpcConnector] LicenseClient-wwy channel disconnected successfully.
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-wwy-2022.3.62" at "2026-10-11T15:30:39.7067615Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 4576, path: "D:/Unity/2022.3.62f3c1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.16.2+bdef8f5
+  Session Id:              ea477b2e456b4b7eb0e2353662a2b324
+  Correlation Id:          1a4f858f6b9f09e4cf44cc1efa298d21
+  External correlation Id: 3103895339382895128
+  Machine Id:              MWHUk9loZLdvBqysQoQ5ln98iL0=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-wwy-2022.3.62" (connect: 0.00s, validation: 0.01s, handshake: 0.01s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-wwy-2022.3.62-notifications" at "2026-10-11T15:30:39.7307473Z"
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully updated license
+Built from '2022.3/china_unity/release' branch; Version is '2022.3.62f3c1 (1623fc0bbb97) revision 1451004'; Using compiler version '192829333'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) 64bit CoreCountrySpecific' Language: 'zh' Physical Memory: 15989 MB
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "F4-9824-X2RJ-JT29-DKH3-XXXX"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1, IsPro: 0
+[Licensing::Client] Successfully resolved entitlement details
+
+COMMAND LINE ARGUMENTS:
+D:\Unity\2022.3.62f3c1\Editor\Unity.exe
+-batchmode
+-quit
+-projectPath
+D:Tempterrain-water-isolated
+-runTests
+-testPlatform
+EditMode
+-testResults
+D:Tempterrain-water-isolatededitmode-results.xml
+-logFile
+D:Tempterrain-water-isolatededitmode.log
+Couldn't set project path to: D:/Git/spotlight-gamejam-idea/D:Tempterrain-water-isolated
+Exiting without the bug reporter. Application will terminate with return code 1
