@@ -442,6 +442,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 356713220}
+  directDrive: 1
+  states:
+    idle: Idle
+    moveDown: MoveDown
+    moveUp: MoveUp
+    moveLeft: MoveLeft
+    moveRight: MoveRight
+    kneel: Kneel
+    coverEarsMoveDown: 
+    coverEarsMoveUp: 
+    coverEarsMoveLeft: 
+    coverEarsMoveRight: 
+    crossFadeSeconds: 0.08
 --- !u!50 &356713222
 Rigidbody2D:
   serializedVersion: 4
@@ -698,7 +711,7 @@ MonoBehaviour:
   malePrefab: {fileID: 6538767984034908201, guid: 6c43fcee2e3c63042a7ec65a852aece3, type: 3}
   femalePrefab: {fileID: 417016028933902612, guid: d337f3527b5f9684f9c58b7c5439e77b, type: 3}
   prewarmPerPrefab: 130
-  maxPoolSize: 1500
+  maxPoolSize: 200
   darknessStart: 0.8
 --- !u!4 &1384283715
 Transform:

@@ -58,9 +58,19 @@ namespace Healing.Demo3.Adapters
             services.Bus.Subscribe<GirlFaintedEvent>(OnGirlFainted);
         }
 
-        private void Start()
+        private void Start() => StartCoroutine(InitWhenReady());
+
+        private IEnumerator InitWhenReady()
         {
-            if (services == null) { Debug.LogError("[Demo3] Act3 需要 Demo3FlowCarrier 在场。"); enabled = false; return; }
+            // 载体的加载协程会在场景激活后一两个帧才注入服务，这里等注入再初始化
+            float waited = 0f;
+            while (services == null && waited < 3f) { waited += Time.unscaledDeltaTime; yield return null; }
+            if (services == null)
+            {
+                Debug.LogError("[Demo3] Act3 需要 Demo3FlowCarrier 在场（从第一幕进入，或在该场景放一个）。");
+                enabled = false;
+                yield break;
+            }
 
             session = new Act3Session(girl.transform.position, services.Bus, services.Flow, services.Flags);
             session.SetJumpZones(jumpZones);

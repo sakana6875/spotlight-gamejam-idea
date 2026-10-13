@@ -49,6 +49,7 @@ namespace Healing.Demo3.Adapters
         private static void ValidatePrefab(NpcAgentView prefab)
         {
             if (prefab == null) return;
+            if (prefab.UsesDirectDrive) { prefab.PreflightStates(); return; }
             var anim = prefab.GetComponentInChildren<Animator>();
             Demo3AnimParams.Validate(anim, prefab, needPosture: false, needHandhold: false);
         }

@@ -26,7 +26,7 @@ namespace Healing.Demo3.Application
         public float JumpApexVisual = 1.2f;     // 视觉腾空高度（适配层换算）
         public float TrailStartY = 20f;         // 超过此高度进入"浅水沙地"段，开始留轨迹
         public float MushroomEntryY = 60f;      // 到达蘑菇段入口
-        public float TreeY = 40f;               // 第三段：大树位置（相对第三段起点）
+        public float TreeY = 150f;              // 第三段终点：大树位置（绝对 Y 坐标，须高于蘑菇段出口）
         public string TrailAreaId = "sand";
 
         public Act2Segment Segment { get; private set; } = Act2Segment.Intro;

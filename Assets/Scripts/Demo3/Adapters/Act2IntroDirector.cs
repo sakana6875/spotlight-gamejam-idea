@@ -8,7 +8,8 @@ namespace Healing.Demo3.Adapters
     /// 第二幕开场救援播片（表现层协程，不含游戏规则）：
     /// 画面暗下 → 聚光灯打女孩 → 男孩脚步声 → 男孩自暗处走来，
     /// 停在明暗交界伸手 → 女孩抬头迟疑 → 被拉起 → 男孩向上走一点提示方向 → 交还操控。
-    /// 动画靠 Animator Trigger（Extend / RaiseHead / PulledUp / Stand），占位期可只做位移。
+    /// 演出全程接管两位角色的动画与位移（SetExternalAnimControl），
+    /// 动作按状态名直切（Extend / RaiseHead / Stand），控制器里建同名状态即可，无需转换线。
     /// </summary>
     public sealed class Act2IntroDirector : MonoBehaviour
     {
@@ -21,14 +22,19 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private float walkSpeed = 1.6f;
         [SerializeField] private float hesitatePause = 1.2f;
 
-        private static readonly int ExtendHash = Animator.StringToHash("Extend");
-        private static readonly int RaiseHeadHash = Animator.StringToHash("RaiseHead");
-        private static readonly int StandHash = Animator.StringToHash("Stand");
+        // 演出动作状态名（在 Animator 控制器里建同名状态，把美术片段拖进去）
+        private const string ExtendState = "Extend";       // 男孩伸手
+        private const string RaiseHeadState = "RaiseHead"; // 女孩抬头
+        private const string StandState = "Stand";         // 女孩被拉起站直
 
         public void Play(Action onComplete) => StartCoroutine(Routine(onComplete));
 
         private IEnumerator Routine(Action onComplete)
         {
+            // 接管动画与位移，防止场景根每帧 Apply 与演出打架
+            boy.SetExternalAnimControl(true);
+            girl.SetExternalAnimControl(true);
+
             Vector2 girlPos = girl.transform.position;
             boy.Bind(boyEntryPoint != null ? (Vector2)boyEntryPoint.position : girlPos + Vector2.right * 8f);
 
@@ -39,11 +45,11 @@ namespace Healing.Demo3.Adapters
             yield return MoveWalker(boy, standPos, walkSpeed);
 
             // 伸手 → 女孩抬头迟疑 → 拉起
-            Trigger(boy, ExtendHash);
+            boy.PlayAction(ExtendState);
             yield return new WaitForSeconds(0.8f);
-            Trigger(girl, RaiseHeadHash);
+            girl.PlayAction(RaiseHeadState);
             yield return new WaitForSeconds(hesitatePause);
-            Trigger(girl, StandHash);
+            girl.PlayAction(StandState);
             yield return new WaitForSeconds(0.6f);
 
             // 牵手建立：男孩领队
@@ -55,6 +61,9 @@ namespace Healing.Demo3.Adapters
             Vector2 hintPos = (Vector2)boy.transform.position + Vector2.up * 1.5f;
             yield return MoveWalker(boy, hintPos, walkSpeed);
 
+            // 归还控制权（内部会清直驱缓存，下一帧强制重选状态）
+            boy.SetExternalAnimControl(false);
+            girl.SetExternalAnimControl(false);
             onComplete?.Invoke();
         }
 
@@ -65,17 +74,11 @@ namespace Healing.Demo3.Adapters
             {
                 pos = Vector2.MoveTowards(pos, target, speed * Time.deltaTime);
                 Vector2 vel = (target - pos).normalized * speed;
-                w.Apply(pos, vel);
+                w.ApplyExternal(pos, vel);
                 handhold.SetLeaderPos(pos);
                 yield return null;
             }
-            w.Apply(target, Vector2.zero);
-        }
-
-        private static void Trigger(WalkerViewAdapter w, int hash)
-        {
-            var anim = w.GetComponentInChildren<Animator>();
-            if (anim != null) anim.SetTrigger(hash);
+            w.ApplyExternal(target, Vector2.zero);
         }
     }
 }

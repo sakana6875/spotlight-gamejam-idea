@@ -7,13 +7,16 @@ namespace Healing.Demo3.Adapters
     /// <summary>
     /// 小女孩的 Unity 适配：把 Session 的纯数据状态落到 Rigidbody2D 与 Animator。
     /// 移动逻辑（速度、迟钝、姿态）全在 Session/Domain，这里只做表现同步。
-    /// Animator 参数约定见 <see cref="Demo3AnimParams"/>：
-    /// Speed / IsMoving / DirX / DirY / Facing / Posture / IsHoldingHands / Appearance。
+    /// 动画驱动两种方式（Inspector 上二选一）：
+    ///  - Direct Drive ✓（默认，推荐）：代码直接 CrossFade 到同名状态，控制器不需要拉转换线；
+    ///  - Direct Drive ✗：条件驱动，按 <see cref="Demo3AnimParams"/> 的参数表自己接转换线。
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     public sealed class GirlViewAdapter : MonoBehaviour
     {
         [SerializeField] private Animator animator;
+        [SerializeField] private bool directDrive = true;
+        [SerializeField] private Demo3AnimStateDriver states = new Demo3AnimStateDriver();
 
         private Rigidbody2D rb;
         private Demo3Session session;
@@ -35,6 +38,7 @@ namespace Healing.Demo3.Adapters
             session = s;
             pendingPos = s.PlayerPosition;
             rb.position = s.PlayerPosition;
+            if (directDrive) { states.Preflight(animator, this, needKneel: true); return; }    // 直驱模式不需要任何 Animator 参数
             Demo3AnimParams.Validate(animator, this, needPosture: true, needHandhold: true);
             if (animator != null)
             {
@@ -48,14 +52,14 @@ namespace Healing.Demo3.Adapters
         public void SetHandholding(bool value)
         {
             holdingHands = value;
-            if (animator != null) animator.SetBool(Demo3AnimParams.IsHoldingHands, value);
+            if (!directDrive && animator != null) animator.SetBool(Demo3AnimParams.IsHoldingHands, value);
         }
 
         /// <summary>形象变体：0=带帽子 1=不戴帽子 2=不戴帽子不带披风</summary>
         public void SetAppearance(int index)
         {
             appearance = index;
-            if (animator != null) animator.SetInteger(Demo3AnimParams.Appearance, index);
+            if (!directDrive && animator != null) animator.SetInteger(Demo3AnimParams.Appearance, index);
         }
 
         public void Apply()
@@ -65,11 +69,21 @@ namespace Healing.Demo3.Adapters
             if (animator == null) return;
 
             Vector2 v = session.PlayerVelocity;
-            animator.SetFloat(Demo3AnimParams.Speed, v.magnitude);
-            animator.SetBool(Demo3AnimParams.IsMoving, v.magnitude > Demo3AnimParams.MoveEpsilon);
-            animator.SetInteger(Demo3AnimParams.Posture, (int)session.Gait.Posture);
-
+            bool moving = v.magnitude > Demo3AnimParams.MoveEpsilon;
             lastFacing = Demo3AnimParams.FacingFromVelocity(v, lastFacing);
+            var posture = session.Gait.Posture;
+
+            if (directDrive)
+            {
+                states.Play(animator, this, moving, lastFacing,
+                    kneeling: posture == Demo3Posture.Kneel,
+                    coverEars: posture == Demo3Posture.CoverEars || posture == Demo3Posture.Crouch);
+                return;
+            }
+
+            animator.SetFloat(Demo3AnimParams.Speed, v.magnitude);
+            animator.SetBool(Demo3AnimParams.IsMoving, moving);
+            animator.SetInteger(Demo3AnimParams.Posture, (int)posture);
             animator.SetInteger(Demo3AnimParams.Facing, lastFacing);
 
             if (v.sqrMagnitude > 0.01f)

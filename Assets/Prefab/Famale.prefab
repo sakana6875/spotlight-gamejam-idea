@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8115987080790701494}
   - component: {fileID: 8937427377801081259}
   - component: {fileID: 417016028933902612}
+  - component: {fileID: -7150073895779982175}
   m_Layer: 0
   m_Name: Famale
   m_TagString: Untagged
@@ -149,3 +150,61 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   body: {fileID: 6843583240279134450}
   animator: {fileID: 8115987080790701494}
+  directDrive: 1
+  states:
+    idle: Idle
+    moveDown: MoveDown
+    moveUp: MoveUp
+    moveLeft: MoveLeft
+    moveRight: MoveRight
+    kneel: Kneel
+    coverEarsMoveDown: 
+    coverEarsMoveUp: 
+    coverEarsMoveLeft: 
+    coverEarsMoveRight: 
+    crossFadeSeconds: 0.08
+--- !u!61 &-7150073895779982175
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2242727101208511221}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0.24206626, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 12.46, y: 12.8}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 7.1345367, y: 12.8}
+  m_EdgeRadius: 0

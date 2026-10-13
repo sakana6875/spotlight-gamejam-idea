@@ -29,6 +29,11 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private List<JumpZoneData> jumpZones = new List<JumpZoneData>();
         [SerializeField] private float jumpApexVisual = 1.2f;
 
+        [Header("段落阈值（绝对 Y 坐标，按你的关卡摆位填）")]
+        [SerializeField] private float trailStartY = 20f;      // 超过此高度开始留水纹/脚印
+        [SerializeField] private float mushroomEntryY = 60f;   // 到达此高度进入蘑菇跳台段
+        [SerializeField] private float treeY = 150f;           // 第三段终点：大树位置（须高于蘑菇段出口）
+
         [Header("区域名称显示（看客区域不显示；矩形按实际场景坐标微调）")]
         [SerializeField] private AreaNameBannerView areaNameBanner;
         [SerializeField] private List<AreaNameZone> areaZones = new List<AreaNameZone>
@@ -43,6 +48,8 @@ namespace Healing.Demo3.Adapters
         private AreaNameAnnouncer areaAnnouncer;
         private TrailRecorder followerTrails; // 牵手跟随者的脚印（沙地段女孩脚印）
         private ActWalkSession trailHookedFor; // 当前已订阅视图的轨迹记录器归属
+        private Vector2 lastGuidePos;          // 蘑菇段引导 AI 上一帧位置（反推速度喂动画）
+        private bool hasLastGuidePos;
 
         public override void Configure(IDemo3Services s)
         {
@@ -52,9 +59,19 @@ namespace Healing.Demo3.Adapters
             services.Bus.Subscribe<JumpLandedEvent>(OnPlayerLanded);
         }
 
-        private void Start()
+        private void Start() => StartCoroutine(InitWhenReady());
+
+        private IEnumerator InitWhenReady()
         {
-            if (services == null) { Debug.LogError("[Demo3] Act2 需要 Demo3FlowCarrier 在场（从第一幕进入，或在该场景放一个）。"); enabled = false; return; }
+            // 载体的加载协程会在场景激活后一两个帧才注入服务（它有意多等了一帧），这里等注入再初始化
+            float waited = 0f;
+            while (services == null && waited < 3f) { waited += Time.unscaledDeltaTime; yield return null; }
+            if (services == null)
+            {
+                Debug.LogError("[Demo3] Act2 需要 Demo3FlowCarrier 在场（从第一幕进入，或在该场景放一个）。");
+                enabled = false;
+                yield break;
+            }
 
             var tops = new List<Vector2>();
             foreach (var m in mushrooms) tops.Add(m.transform.position);
@@ -62,6 +79,9 @@ namespace Healing.Demo3.Adapters
             session.SetJumpZones(jumpZones);
             session.Player.Bounds = walkBounds;
             session.JumpApexVisual = jumpApexVisual;
+            session.TrailStartY = trailStartY;
+            session.MushroomEntryY = mushroomEntryY;
+            session.TreeY = treeY;
 
             boy.Bind(session.Player.Position);
             girl.Bind(session.Player.Position + new Vector2(0.45f, -0.1f));
@@ -69,7 +89,12 @@ namespace Healing.Demo3.Adapters
             foreach (var m in mushrooms) m.SetVisibility(MushroomPlatformView.Visibility.Hidden); // 男孩看不见未点亮的
 
             services.Input.JumpPressed += OnJumpPressed;
-            introDirector.Play(() => session.NotifyIntroFinished());
+            introDirector.Play(() =>
+            {
+                // 播片把男孩牵到了新位置，交还操控前先把会话位置同步过去，避免瞬移回开场点
+                session.Player.Teleport(boy.transform.position);
+                session.NotifyIntroFinished();
+            });
 
             if (areaNameBanner != null && areaZones.Count > 0)
             {
@@ -194,12 +219,16 @@ namespace Healing.Demo3.Adapters
                 }
             }
 
-            // 蘑菇段：女孩由引导 AI 驱动
+            // 蘑菇段：女孩由引导 AI 驱动（速度由位移反推，保证走动动画正常）
             if (session.Segment == Act2Segment.Mushrooms && session.Guide != null)
             {
-                girl.Apply(session.Guide.Position, Vector2.zero);
+                Vector2 gp = session.Guide.Position;
+                Vector2 gv = hasLastGuidePos ? (gp - lastGuidePos) / Mathf.Max(dt, 1e-5f) : Vector2.zero;
+                lastGuidePos = gp; hasLastGuidePos = true;
+                girl.Apply(gp, gv);
                 girl.SetVisualLift(session.Guide.JumpHeight01 * jumpApexVisual);
             }
+            else hasLastGuidePos = false;
 
             // 第三段：操控女孩，男孩跟随
             if (session.GirlIsLeader)
