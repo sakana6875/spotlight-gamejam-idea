@@ -5,7 +5,7 @@ using UnityEngine.Tilemaps;
 namespace Spotlight.Demos.Demo2
 {
     /// <summary>
-    /// 从手工水格和地面覆盖推导有限水道，并推进稳定蓄积后的水平水流。
+    /// 从手工水源行和地面覆盖推导固定行水道，并逐格向右推进水流。
     /// </summary>
     public sealed class TerrainWaterController : MonoBehaviour
     {
@@ -21,7 +21,7 @@ namespace Spotlight.Demos.Demo2
         private float _stepElapsed;
 
         /// <summary>
-        /// 当前离散水格模型；配置无效时为 <see langword="null"/>。
+        /// 当前固定行水道模型；配置无效时为 <see langword="null"/>。
         /// </summary>
         public TerrainWaterModel Model => _model;
 
@@ -46,13 +46,13 @@ namespace Spotlight.Demos.Demo2
                 return;
             }
 
-            if (!TryGetGroundExtents(out int highestGroundColumn, out int highestGroundRow))
+            if (!TryGetHighestGroundColumn(out int highestGroundColumn))
             {
                 DisableForInvalidConfiguration("GroundTilemap 没有可支撑水道的地面格。");
                 return;
             }
 
-            _waterBounds = CreateWaterBounds(sourceBounds, highestGroundColumn, highestGroundRow);
+            _waterBounds = CreateWaterBounds(sourceBounds, highestGroundColumn);
             try
             {
                 _model = new TerrainWaterModel(_waterBounds.size.x, _waterBounds.size.y);
@@ -76,10 +76,11 @@ namespace Spotlight.Demos.Demo2
                 DisableForInvalidConfiguration("WaterInteriorTilemap 中存在未被 GroundTilemap 支撑的手工水源格。");
                 return;
             }
+
             WaterDampingArea dampingArea = GetComponent<WaterDampingArea>();
             if (dampingArea == null || !dampingArea.TryConfigureWaterBounds(_waterRenderer.WaterTilemap, _waterBounds))
             {
-                DisableForInvalidConfiguration("WaterDampingArea 无法配置水道 Trigger。");
+                DisableForInvalidConfiguration("WaterDampingArea 无法配置固定行水道 Trigger。");
                 return;
             }
 
@@ -117,7 +118,7 @@ namespace Spotlight.Demos.Demo2
         }
 
         /// <summary>
-        /// 查询世界坐标当前位置是否已被手工源格或扩张水格占据。
+        /// 查询世界坐标当前位置是否被固定行水道中的水占据。
         /// </summary>
         public bool IsWaterAtWorldPosition(Vector2 worldPosition)
         {
@@ -133,21 +134,17 @@ namespace Spotlight.Demos.Demo2
                 _model.IsWater(column, row);
         }
 
-        private BoundsInt CreateWaterBounds(BoundsInt sourceBounds, int highestGroundColumn, int highestGroundRow)
+        private static BoundsInt CreateWaterBounds(BoundsInt sourceBounds, int highestGroundColumn)
         {
-            int highestSourceRow = sourceBounds.yMax - 1;
-            int highestRow = Mathf.Max(highestSourceRow, highestGroundRow);
             int width = highestGroundColumn - sourceBounds.xMin + 1;
-            int height = highestRow - sourceBounds.yMin + 1;
             return new BoundsInt(
                 new Vector3Int(sourceBounds.xMin, sourceBounds.yMin, sourceBounds.zMin),
-                new Vector3Int(width, height, 1));
+                new Vector3Int(width, sourceBounds.size.y, 1));
         }
 
-        private bool TryGetGroundExtents(out int highestGroundColumn, out int highestGroundRow)
+        private bool TryGetHighestGroundColumn(out int highestGroundColumn)
         {
             highestGroundColumn = int.MinValue;
-            highestGroundRow = int.MinValue;
             BoundsInt groundBounds = _groundTilemap.cellBounds;
             bool hasGround = false;
 
@@ -158,14 +155,13 @@ namespace Spotlight.Demos.Demo2
                     for (int x = groundBounds.xMin; x < groundBounds.xMax; x++)
                     {
                         Vector3Int groundCell = new Vector3Int(x, y, z);
-                        if (_groundTilemap.GetTile(groundCell) == null)
+                        if (!_groundTilemap.HasTile(groundCell))
                         {
                             continue;
                         }
 
                         Vector3Int waterCell = _waterRenderer.WorldToCell(_groundTilemap.GetCellCenterWorld(groundCell));
                         highestGroundColumn = Mathf.Max(highestGroundColumn, waterCell.x);
-                        highestGroundRow = Mathf.Max(highestGroundRow, waterCell.y);
                         hasGround = true;
                     }
                 }
@@ -218,7 +214,7 @@ namespace Spotlight.Demos.Demo2
                     for (int x = groundBounds.xMin; x < groundBounds.xMax; x++)
                     {
                         Vector3Int groundCell = new Vector3Int(x, y, z);
-                        if (_groundTilemap.GetTile(groundCell) == null)
+                        if (!_groundTilemap.HasTile(groundCell))
                         {
                             continue;
                         }
@@ -274,7 +270,7 @@ namespace Spotlight.Demos.Demo2
 
         private void DisableForInvalidConfiguration(string reason)
         {
-            Debug.LogError("地形边界水流配置无效：" + reason, this);
+            Debug.LogError("固定行水道配置无效：" + reason, this);
             enabled = false;
         }
 

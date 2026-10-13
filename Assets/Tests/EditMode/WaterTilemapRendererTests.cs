@@ -10,7 +10,7 @@ namespace Spotlight.Tests.EditMode
     public sealed class WaterTilemapRendererTests
     {
         private GameObject _gridObject;
-        private Tile _sourceTile;
+        private Tile _waterTile;
 
         [TearDown]
         public void TearDown()
@@ -20,47 +20,46 @@ namespace Spotlight.Tests.EditMode
                 Object.DestroyImmediate(_gridObject);
             }
 
-            if (_sourceTile != null)
+            if (_waterTile != null)
             {
-                Object.DestroyImmediate(_sourceTile);
+                Object.DestroyImmediate(_waterTile);
             }
         }
 
         [Test]
-        public void TryGetAuthoredSourceBounds_DiscoversAllNonContiguousTilesOutsideLegacyRange()
+        public void AuthoredSourceBounds_DiscoversNonContiguousTilesWithoutFillingGap()
         {
             WaterTilemapRenderer renderer = CreateRenderer(out Tilemap waterTilemap);
-            Vector3Int lowerSource = new Vector3Int(-4, -8, 0);
-            Vector3Int upperSource = new Vector3Int(17, 3, 0);
-            waterTilemap.SetTile(lowerSource, _sourceTile);
-            waterTilemap.SetTile(upperSource, _sourceTile);
+            Vector3Int lowerWater = new Vector3Int(-4, -8, 0);
+            Vector3Int upperWater = new Vector3Int(17, 3, 0);
+            Vector3Int gap = new Vector3Int(0, 0, 0);
+            waterTilemap.SetTile(lowerWater, _waterTile);
+            waterTilemap.SetTile(upperWater, _waterTile);
 
-            bool wasFound = renderer.TryGetAuthoredSourceBounds(out BoundsInt sourceBounds);
-            TerrainWaterModel model = new TerrainWaterModel(sourceBounds.size.x, sourceBounds.size.y);
-            renderer.CaptureAuthoredSources(model, sourceBounds);
+            bool wasFound = renderer.TryGetAuthoredSourceBounds(out BoundsInt waterBounds);
+            TerrainWaterModel model = new TerrainWaterModel(waterBounds.size.x, waterBounds.size.y);
+            renderer.CaptureAuthoredSources(model, waterBounds);
             model.ResetToSources();
-            waterTilemap.SetTile(lowerSource, null);
-            waterTilemap.SetTile(upperSource, null);
-            renderer.Render(model, sourceBounds);
+            renderer.Render(model, waterBounds);
+            renderer.UpdateFlowAnimation(model, waterBounds, 10f);
 
             Assert.That(wasFound, Is.True);
-            Assert.That(sourceBounds, Is.EqualTo(new BoundsInt(new Vector3Int(-4, -8, 0), new Vector3Int(22, 12, 1))));
-            Assert.That(model.SourceCount, Is.EqualTo(2));
-            Assert.That(model.IsSource(0, 0), Is.True);
-            Assert.That(model.IsSource(21, 11), Is.True);
-            Assert.That(waterTilemap.GetTile(lowerSource), Is.SameAs(_sourceTile));
-            Assert.That(waterTilemap.GetTile(upperSource), Is.SameAs(_sourceTile));
+            Assert.That(waterBounds,
+                Is.EqualTo(new BoundsInt(new Vector3Int(-4, -8, 0), new Vector3Int(22, 12, 1))));
+            Assert.That(waterTilemap.GetTile(lowerWater), Is.SameAs(_waterTile));
+            Assert.That(waterTilemap.GetTile(upperWater), Is.SameAs(_waterTile));
+            Assert.That(waterTilemap.HasTile(gap), Is.False);
         }
 
         [Test]
-        public void TryGetAuthoredSourceBounds_ReturnsFalseForEmptyTilemap()
+        public void AuthoredSourceBounds_ReturnsFalseForEmptyTilemap()
         {
             WaterTilemapRenderer renderer = CreateRenderer(out Tilemap _);
 
-            bool wasFound = renderer.TryGetAuthoredSourceBounds(out BoundsInt sourceBounds);
+            bool wasFound = renderer.TryGetAuthoredSourceBounds(out BoundsInt waterBounds);
 
             Assert.That(wasFound, Is.False);
-            Assert.That(sourceBounds.size, Is.EqualTo(Vector3Int.zero));
+            Assert.That(waterBounds.size, Is.EqualTo(Vector3Int.zero));
         }
 
         private WaterTilemapRenderer CreateRenderer(out Tilemap waterTilemap)
@@ -70,11 +69,11 @@ namespace Spotlight.Tests.EditMode
             waterObject.transform.SetParent(_gridObject.transform, false);
             waterTilemap = waterObject.GetComponent<Tilemap>();
             WaterTilemapRenderer renderer = waterObject.AddComponent<WaterTilemapRenderer>();
-            _sourceTile = ScriptableObject.CreateInstance<Tile>();
+            _waterTile = ScriptableObject.CreateInstance<Tile>();
 
             SerializedObject serializedRenderer = new SerializedObject(renderer);
             serializedRenderer.FindProperty("_waterTilemap").objectReferenceValue = waterTilemap;
-            serializedRenderer.FindProperty("_waterTile").objectReferenceValue = _sourceTile;
+            serializedRenderer.FindProperty("_waterTile").objectReferenceValue = _waterTile;
             serializedRenderer.ApplyModifiedPropertiesWithoutUndo();
             return renderer;
         }

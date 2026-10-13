@@ -3,7 +3,7 @@ using System;
 namespace Spotlight.Demos.Demo2
 {
     /// <summary>
-    /// 表示手工源格持续供水、仅向右扩展并在障碍前蓄积的离散水体状态。
+    /// 表示手工源格持续供水、且每条水道只在原行内向右扩展的离散水体状态。
     /// </summary>
     public sealed class TerrainWaterModel
     {
@@ -14,7 +14,7 @@ namespace Spotlight.Demos.Demo2
         private int _sourceCount;
 
         /// <summary>
-        /// 创建指定范围内的离散水格模型。
+        /// 创建指定固定行范围内的离散水格模型。
         /// </summary>
         public TerrainWaterModel(int width, int height)
         {
@@ -36,29 +36,12 @@ namespace Spotlight.Demos.Demo2
             _nextWaterCells = new bool[width * height];
         }
 
-        /// <summary>
-        /// 模拟区域的列数。
-        /// </summary>
         public int Width { get; }
 
-        /// <summary>
-        /// 模拟区域的行数。
-        /// </summary>
         public int Height { get; }
 
-        /// <summary>
-        /// 模拟范围内的格数量，用于有界稳定求解。
-        /// </summary>
-        public int CellCount => _waterCells.Length;
-
-        /// <summary>
-        /// 当前模拟范围内手工源格的数量。
-        /// </summary>
         public int SourceCount => _sourceCount;
 
-        /// <summary>
-        /// 设置用户手工铺设的永久源格。
-        /// </summary>
         public void SetSource(int column, int row, bool isSource)
         {
             int index = GetIndex(column, row);
@@ -71,18 +54,11 @@ namespace Spotlight.Demos.Demo2
             _sourceCount += isSource ? 1 : -1;
         }
 
-        /// <summary>
-        /// 查询指定格是否为永久源格。
-        /// </summary>
         public bool IsSource(int column, int row)
         {
             return _sourceCells[GetIndex(column, row)];
         }
 
-        /// <summary>
-        /// 设置边界格是否阻挡水。阻挡格不能保留水。
-        /// </summary>
-        /// <returns>边界变化或水格被清除时返回 <see langword="true"/>。</returns>
         public bool SetBlocked(int column, int row, bool isBlocked)
         {
             int index = GetIndex(column, row);
@@ -102,9 +78,6 @@ namespace Spotlight.Demos.Demo2
             return true;
         }
 
-        /// <summary>
-        /// 以当前未被阻挡的源格重置水体。
-        /// </summary>
         public void ResetToSources()
         {
             Array.Clear(_waterCells, 0, _waterCells.Length);
@@ -118,26 +91,14 @@ namespace Spotlight.Demos.Demo2
             }
         }
 
-        /// <summary>
-        /// 查询指定格是否阻挡水。
-        /// </summary>
-        public bool IsBlocked(int column, int row)
-        {
-            return _blockedCells[GetIndex(column, row)];
-        }
-
-        /// <summary>
-        /// 查询指定格是否已被水占据。
-        /// </summary>
         public bool IsWater(int column, int row)
         {
             return _waterCells[GetIndex(column, row)];
         }
 
         /// <summary>
-        /// 推进一步。源格持续补水，水仅向右扩展；右侧受阻时在连续水体上方蓄积。
+        /// 推进一步；每个水格最多向同一行的右侧扩展一格，阻挡不会触发跨行蓄积。
         /// </summary>
-        /// <returns>本步是否新增了水格。</returns>
         public bool Step()
         {
             Array.Copy(_waterCells, _nextWaterCells, _waterCells.Length);
@@ -156,44 +117,14 @@ namespace Spotlight.Demos.Demo2
             {
                 for (int column = 0; column < Width - 1; column++)
                 {
-                    if (!IsWater(column, row))
+                    if (IsWater(column, row) && !_blockedCells[GetIndex(column + 1, row)])
                     {
-                        continue;
+                        hasNewWater |= MarkWater(column + 1, row);
                     }
-
-                    if (IsBlocked(column + 1, row))
-                    {
-                        hasNewWater |= RaiseWaterBeforeBarrier(column, row);
-                        continue;
-                    }
-
-                    hasNewWater |= MarkWater(column + 1, row);
                 }
             }
 
             Array.Copy(_nextWaterCells, _waterCells, _waterCells.Length);
-            return hasNewWater;
-        }
-
-        private bool RaiseWaterBeforeBarrier(int lastWaterColumn, int row)
-        {
-            int raisedRow = row + 1;
-            if (raisedRow >= Height)
-            {
-                return false;
-            }
-
-            bool hasNewWater = false;
-            for (int column = lastWaterColumn; column >= 0; column--)
-            {
-                if (IsBlocked(column, raisedRow) || !IsWater(column, row))
-                {
-                    break;
-                }
-
-                hasNewWater |= MarkWater(column, raisedRow);
-            }
-
             return hasNewWater;
         }
 

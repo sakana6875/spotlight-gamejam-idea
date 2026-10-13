@@ -58,6 +58,10 @@ namespace Spotlight.Demos.Demo2
         private TopMovementAxis _topMovementAxis = TopMovementAxis.Horizontal;
         
         public Demo2ViewMode ViewMode => _viewMode; // 当前视角模式
+        /// <summary>
+        /// 玩家当前在侧视规则下朝向右侧。
+        /// </summary>
+        public bool IsFacingRight => _isFacingRight;
 
         /// <summary>
         /// 玩家移动规则已经切换到指定视图模式的事实通知。

@@ -4,7 +4,7 @@ using UnityEngine.Tilemaps;
 namespace Spotlight.Demos.Demo2
 {
     /// <summary>
-    /// 保留手工源格，并将模型扩张水格写入同一专用 Tilemap。
+    /// 保留手工源格，并将模型的同水道行扩展格写入专用 Tilemap。
     /// </summary>
     public sealed class WaterTilemapRenderer : MonoBehaviour
     {
@@ -24,7 +24,6 @@ namespace Spotlight.Demos.Demo2
         /// <summary>
         /// 完整扫描手工铺设的水格，捕获原始 Tile 并返回其包围范围。
         /// </summary>
-        /// <remarks>运行时扩张格尚未写入前调用，避免将其误认为持续源格。</remarks>
         public bool TryGetAuthoredSourceBounds(out BoundsInt sourceBounds)
         {
             sourceBounds = new BoundsInt();
@@ -70,7 +69,7 @@ namespace Spotlight.Demos.Demo2
         }
 
         /// <summary>
-        /// 将完整扫描时捕获的永久源格写入推导水道域的模型。
+        /// 将手工源格写入固定行水道模型。
         /// </summary>
         public void CaptureAuthoredSources(TerrainWaterModel model, BoundsInt waterBounds)
         {
@@ -94,7 +93,7 @@ namespace Spotlight.Demos.Demo2
         }
 
         /// <summary>
-        /// 使用模型占据状态更新水道范围内的水 Tile，并保留手工源格的原始 Tile。
+        /// 只在固定水道行范围内写入当前水格，并保留手工源 Tile。
         /// </summary>
         public void Render(TerrainWaterModel model, BoundsInt waterBounds)
         {
@@ -123,7 +122,7 @@ namespace Spotlight.Demos.Demo2
         }
 
         /// <summary>
-        /// 以列间相位差推进已占水格的 AnimatedTile，使水纹持续向右移动。
+        /// 以列间相位差推进当前占水格的 AnimatedTile。
         /// </summary>
         public void UpdateFlowAnimation(TerrainWaterModel model, BoundsInt waterBounds, float time)
         {
@@ -152,35 +151,25 @@ namespace Spotlight.Demos.Demo2
                         continue;
                     }
 
-                    _waterTilemap.SetAnimationTime(cell, animationTime - column * _flowPhaseSecondsPerCell);
+                    _waterTilemap.SetAnimationTime(
+                        cell,
+                        animationTime - column * _flowPhaseSecondsPerCell);
                 }
             }
         }
 
-        /// <summary>
-        /// 水格所属 Tilemap，用于将水道域转换为其他组件的坐标系。
-        /// </summary>
         public Tilemap WaterTilemap => _waterTilemap;
 
-        /// <summary>
-        /// 将 Tilemap 单元中心转换为世界坐标，用于动态 Collider2D 边界采样。
-        /// </summary>
         public Vector3 GetCellCenterWorld(Vector3Int cell)
         {
             return _waterTilemap.GetCellCenterWorld(cell);
         }
 
-        /// <summary>
-        /// 将世界坐标转换为水 Tilemap 单元。
-        /// </summary>
         public Vector3Int WorldToCell(Vector2 worldPosition)
         {
             return _waterTilemap.WorldToCell(worldPosition);
         }
 
-        /// <summary>
-        /// 当前引用是否完整。
-        /// </summary>
         public bool IsConfigured => _waterTilemap != null && _waterTile != null;
 
         private void EnsureSourceBuffer(BoundsInt sourceBufferBounds)
