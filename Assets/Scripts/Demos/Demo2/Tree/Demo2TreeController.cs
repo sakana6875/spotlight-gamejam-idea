@@ -36,6 +36,11 @@ namespace Spotlight.Demos.Demo2
         private bool _isConfigured;
 
         /// <summary>
+        /// 树首次成功进入发芽阶段的事实通知。
+        /// </summary>
+        public event Action SproutingStarted;
+
+        /// <summary>
         /// 嫩芽出现动画已经完成的事实通知。
         /// </summary>
         public event Action SproutingCompleted;
@@ -143,6 +148,7 @@ namespace Spotlight.Demos.Demo2
             _spriteRenderer.sprite = _saplingSprite;
             _treeCollider.enabled = true;
             _animationRoutine = StartCoroutine(PlaySprouting());
+            SproutingStarted?.Invoke();
             return result;
         }
 

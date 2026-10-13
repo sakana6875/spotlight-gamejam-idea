@@ -38,30 +38,76 @@ namespace Spotlight.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator SideView_HeldPushMovesObstacleHorizontallyAndReleaseStopsApplyingForce()
+        public IEnumerator AuthorizedPushMovesAtConfiguredSpeedAndStopsWithoutFurtherRequests()
         {
             Demo2SimulationController simulationController = CreateSimulationController();
             PlayerMoveController player = CreatePlayer(simulationController);
             Demo2PushController pushController = player.GetComponent<Demo2PushController>();
             Demo2PushableObstacle obstacle = CreatePushableObstacle(new Vector2(1.05f, 0f));
             Physics2D.SyncTransforms();
+            float startX = obstacle.Rigidbody.position.x;
 
             Assert.That(pushController.TryPush(), Is.True);
             yield return new WaitForFixedUpdate();
             Assert.That(pushController.TryPush(), Is.True);
             yield return new WaitForFixedUpdate();
 
-            Assert.That(obstacle.Rigidbody.velocity.x, Is.GreaterThan(0f));
-            Assert.That(obstacle.Rigidbody.velocity.y, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(obstacle.Rigidbody.velocity.x, Is.LessThanOrEqualTo(2.501f));
+            float expectedDistance = 1f * Time.fixedDeltaTime * 2f;
+            Assert.That(obstacle.Rigidbody.position.x, Is.EqualTo(startX + expectedDistance).Within(0.005f));
+            Assert.That(obstacle.Rigidbody.position.y, Is.EqualTo(0f).Within(0.001f));
 
-            obstacle.Rigidbody.velocity = Vector2.zero;
+            float releasedX = obstacle.Rigidbody.position.x;
             yield return new WaitForFixedUpdate();
             yield return new WaitForFixedUpdate();
 
-            Assert.That(obstacle.Rigidbody.velocity.x, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(obstacle.Rigidbody.velocity.y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(obstacle.Rigidbody.position.x, Is.EqualTo(releasedX).Within(0.001f));
             Assert.That(player.ViewMode, Is.EqualTo(PlayerMoveController.Demo2ViewMode.Side));
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerAndMonsterCollisions_CannotMoveObstacleWithoutPushRequest()
+        {
+            Demo2PushableObstacle obstacle = CreatePushableObstacle(new Vector2(1.1f, 0f));
+            float startX = obstacle.Rigidbody.position.x;
+            Rigidbody2D playerBody = CreateBody("PlayerCollisionBody", Vector2.zero);
+            playerBody.velocity = new Vector2(3f, 0f);
+            Physics2D.SyncTransforms();
+
+            for (int step = 0; step < 5; step++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(obstacle.Rigidbody.position.x, Is.EqualTo(startX).Within(0.001f));
+
+            Object.Destroy(playerBody.gameObject);
+            yield return null;
+            Rigidbody2D monsterBody = CreateBody("MonsterCollisionBody", new Vector2(2.2f, 0f));
+            monsterBody.velocity = new Vector2(-3f, 0f);
+            Physics2D.SyncTransforms();
+
+            for (int step = 0; step < 5; step++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(obstacle.Rigidbody.position.x, Is.EqualTo(startX).Within(0.001f));
+        }
+
+        [UnityTest]
+        public IEnumerator GravityFallsWhileHorizontalPositionRemainsLocked()
+        {
+            Demo2PushableObstacle obstacle = CreatePushableObstacle(new Vector2(1.1f, 2f));
+            obstacle.Rigidbody.gravityScale = 1f;
+            float startX = obstacle.Rigidbody.position.x;
+            float startY = obstacle.Rigidbody.position.y;
+
+            yield return new WaitForFixedUpdate();
+            yield return new WaitForFixedUpdate();
+
+            Assert.That(obstacle.Rigidbody.position.x, Is.EqualTo(startX).Within(0.001f));
+            Assert.That(obstacle.Rigidbody.position.y, Is.LessThan(startY));
+            Assert.That(obstacle.Rigidbody.velocity.y, Is.LessThan(0f));
         }
 
         [UnityTest]
@@ -72,22 +118,20 @@ namespace Spotlight.Tests.PlayMode
             Demo2PushController pushController = player.GetComponent<Demo2PushController>();
             Demo2PushableObstacle obstacle = CreatePushableObstacle(new Vector2(1.05f, 0f));
             Physics2D.SyncTransforms();
+            float startX = obstacle.Rigidbody.position.x;
 
             player.SetViewMode(PlayerMoveController.Demo2ViewMode.Top, Vector2.zero);
             Assert.That(pushController.TryPush(), Is.False);
             yield return new WaitForFixedUpdate();
-            Assert.That(obstacle.Rigidbody.velocity.x, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(obstacle.Rigidbody.velocity.y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(obstacle.Rigidbody.position.x, Is.EqualTo(startX).Within(0.001f));
 
             player.SetViewMode(PlayerMoveController.Demo2ViewMode.Side, Vector2.zero);
             obstacle.Rigidbody.position = new Vector2(-1.05f, 0f);
-            obstacle.Rigidbody.velocity = Vector2.zero;
             Physics2D.SyncTransforms();
             Assert.That(player.IsFacingRight, Is.True);
             Assert.That(pushController.TryPush(), Is.False);
             yield return new WaitForFixedUpdate();
-            Assert.That(obstacle.Rigidbody.velocity.x, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(obstacle.Rigidbody.velocity.y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(obstacle.Rigidbody.position.x, Is.EqualTo(-1.05f).Within(0.001f));
 
             Object.Destroy(obstacle.gameObject);
             yield return null;
@@ -95,8 +139,7 @@ namespace Spotlight.Tests.PlayMode
             Rigidbody2D ordinaryBody = CreateBody("OrdinaryBody", new Vector2(1.05f, 0f));
             Assert.That(pushController.TryPush(), Is.False);
             yield return new WaitForFixedUpdate();
-            Assert.That(ordinaryBody.velocity.x, Is.EqualTo(0f).Within(0.001f));
-            Assert.That(ordinaryBody.velocity.y, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(ordinaryBody.position.x, Is.EqualTo(1.05f).Within(0.001f));
         }
 
         [UnityTest]
@@ -112,7 +155,7 @@ namespace Spotlight.Tests.PlayMode
             Assert.That(pushController.TryPush(), Is.False);
             yield return new WaitForFixedUpdate();
 
-            Assert.That(obstacle.Rigidbody.velocity, Is.EqualTo(Vector2.zero));
+            Assert.That(obstacle.Rigidbody.position, Is.EqualTo(new Vector2(1.05f, 0f)));
         }
 
         [UnityTest]
@@ -183,6 +226,7 @@ namespace Spotlight.Tests.PlayMode
             GameObject obstacleObject = CreateInactiveObject("PushableObstacle");
             obstacleObject.transform.position = position;
             Rigidbody2D body = obstacleObject.AddComponent<Rigidbody2D>();
+            body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = 0f;
             body.constraints = RigidbodyConstraints2D.FreezeRotation;
             obstacleObject.AddComponent<BoxCollider2D>();

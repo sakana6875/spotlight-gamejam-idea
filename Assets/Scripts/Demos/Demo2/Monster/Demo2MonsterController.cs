@@ -26,19 +26,20 @@ namespace Spotlight.Demos.Demo2
         private Demo2MonsterStateMachine _stateMachine;
         private Color _normalColor;
         private Demo2MonsterState _appliedAnimatorState = (Demo2MonsterState)(-1);
-        private bool _isConfigured;
+        private bool _isSelfConfigured;
+        private bool _isInitialized;
         private bool _isRegisteredAsAttacker;
         private bool _hasPublishedDeath;
 
         /// <summary>
         /// 怪物是否已完成配置并仍处于存活状态。
         /// </summary>
-        public bool IsAlive => _isConfigured && _stateMachine.IsAlive;
+        public bool IsAlive => _isInitialized && _stateMachine.IsAlive;
 
         /// <summary>
         /// 当前剩余生命；无效配置不会伪造生命值。
         /// </summary>
-        public int CurrentHealth => _isConfigured ? _stateMachine.CurrentHealth : 0;
+        public int CurrentHealth => _isInitialized ? _stateMachine.CurrentHealth : 0;
 
         /// <summary>
         /// 当前由纯状态规则确定的玩法状态。
@@ -50,9 +51,30 @@ namespace Spotlight.Demos.Demo2
         /// </summary>
         public event Action<IMonster> Died;
 
+        /// <summary>
+        /// 为运行时生成的怪物一次性注入场景树苗和暂停控制器。
+        /// </summary>
+        public bool Initialize(
+            Demo2TreeController treeTarget,
+            Demo2SimulationController simulationController)
+        {
+            if (!_isSelfConfigured || _isInitialized || treeTarget == null || simulationController == null)
+            {
+                return false;
+            }
+
+            _treeTarget = treeTarget;
+            _simulationController = simulationController;
+            _isInitialized = true;
+            _appliedAnimatorState = (Demo2MonsterState)(-1);
+            _stateMachine.Advance(0f, IsWithinBiteDistance());
+            ApplyStateEffects();
+            return true;
+        }
+
         private void Awake()
         {
-            if (!TryValidateConfiguration(out string error))
+            if (!TryValidateSelfConfiguration(out string error))
             {
                 DisableForInvalidConfiguration(error);
                 return;
@@ -63,13 +85,26 @@ namespace Spotlight.Demos.Demo2
                 _config.HitStunDurationSeconds,
                 _config.DeathDurationSeconds);
             _normalColor = _spriteRenderer.color;
-            _isConfigured = true;
+            _isSelfConfigured = true;
             ApplyAnimatorState();
+        }
+
+        private void Start()
+        {
+            if (!_isSelfConfigured || _isInitialized)
+            {
+                return;
+            }
+
+            if (!Initialize(_treeTarget, _simulationController))
+            {
+                DisableForInvalidConfiguration("必须配置树苗和玩法暂停控制器。");
+            }
         }
 
         private void OnEnable()
         {
-            if (!_isConfigured)
+            if (!_isInitialized)
             {
                 return;
             }
@@ -81,7 +116,7 @@ namespace Spotlight.Demos.Demo2
 
         private void OnDisable()
         {
-            if (!_isConfigured)
+            if (!_isInitialized)
             {
                 return;
             }
@@ -93,7 +128,7 @@ namespace Spotlight.Demos.Demo2
 
         private void OnDestroy()
         {
-            if (!_isConfigured)
+            if (!_isInitialized)
             {
                 return;
             }
@@ -103,7 +138,7 @@ namespace Spotlight.Demos.Demo2
 
         private void Update()
         {
-            if (!_isConfigured || IsGameplayFrozen)
+            if (!_isInitialized || IsGameplayFrozen)
             {
                 return;
             }
@@ -119,7 +154,7 @@ namespace Spotlight.Demos.Demo2
 
         private void FixedUpdate()
         {
-            if (!_isConfigured || IsGameplayFrozen || !_rigidbody.simulated)
+            if (!_isInitialized || IsGameplayFrozen || !_rigidbody.simulated)
             {
                 return;
             }
@@ -140,7 +175,7 @@ namespace Spotlight.Demos.Demo2
         /// </summary>
         public MonsterDamageResult TryTakeDamage(int damage)
         {
-            if (!_isConfigured)
+            if (!_isInitialized)
             {
                 return MonsterDamageResult.AlreadyDead;
             }
@@ -257,7 +292,7 @@ namespace Spotlight.Demos.Demo2
             _animator.SetInteger(StateParameter, (int)_appliedAnimatorState);
         }
 
-        private bool TryValidateConfiguration(out string error)
+        private bool TryValidateSelfConfiguration(out string error)
         {
             if (_config == null)
             {
@@ -270,11 +305,6 @@ namespace Spotlight.Demos.Demo2
                 return false;
             }
 
-            if (_treeTarget == null || _simulationController == null)
-            {
-                error = "必须配置树苗和玩法暂停控制器。";
-                return false;
-            }
 
             if (_rigidbody == null || _bodyCollider == null || _spriteRenderer == null ||
                 _animator == null || _visualRoot == null)

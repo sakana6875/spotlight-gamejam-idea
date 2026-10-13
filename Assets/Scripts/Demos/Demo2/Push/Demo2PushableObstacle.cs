@@ -3,17 +3,21 @@ using UnityEngine;
 namespace Spotlight.Demos.Demo2
 {
     /// <summary>
-    /// 表示 Demo2 侧视玩法中可以被玩家水平推动的动态障碍物。
+    /// 表示 Demo2 侧视玩法中只允许玩家授权水平移动、同时保留重力的动态障碍物。
     /// </summary>
+    [DefaultExecutionOrder(100)]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(Collider2D))]
     public sealed class Demo2PushableObstacle : MonoBehaviour
     {
         [Header("推动参数")]
-        [SerializeField] private float _pushForce = 40f;
-        [SerializeField] private float _maximumHorizontalSpeed = 2.5f;
+        [SerializeField] private float _pushSpeed = 1f;
 
         private Rigidbody2D _rigidbody;
+        private RigidbodyConstraints2D _idleConstraints;
+        private RigidbodyConstraints2D _pushConstraints;
+        private float _requestedDirection;
+        private bool _hasPushRequest;
         private bool _isConfigured;
 
         /// <summary>
@@ -31,20 +35,61 @@ namespace Spotlight.Demos.Demo2
                 return;
             }
 
-            if (_pushForce <= 0f || float.IsNaN(_pushForce) || float.IsInfinity(_pushForce) ||
-                _maximumHorizontalSpeed <= 0f || float.IsNaN(_maximumHorizontalSpeed) ||
-                float.IsInfinity(_maximumHorizontalSpeed))
+            if (!IsPositiveFinite(_pushSpeed))
             {
-                Debug.LogError("Demo2PushableObstacle 的推动参数必须是有限正数。", this);
+                Debug.LogError("Demo2PushableObstacle 的推动速度必须是有限正数。", this);
                 enabled = false;
                 return;
             }
 
+            _pushConstraints = _rigidbody.constraints & ~RigidbodyConstraints2D.FreezePositionX;
+            _idleConstraints = _pushConstraints | RigidbodyConstraints2D.FreezePositionX;
             _isConfigured = true;
+            ApplyIdleLock();
+        }
+
+        private void OnEnable()
+        {
+            if (_isConfigured)
+            {
+                ApplyIdleLock();
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (_isConfigured)
+            {
+                ApplyIdleLock();
+            }
+        }
+
+        private void FixedUpdate()
+        {
+            if (!_isConfigured)
+            {
+                return;
+            }
+
+            Vector2 velocity = _rigidbody.velocity;
+            if (_hasPushRequest)
+            {
+                _rigidbody.constraints = _pushConstraints;
+                velocity.x = _requestedDirection * _pushSpeed;
+            }
+            else
+            {
+                _rigidbody.constraints = _idleConstraints;
+                velocity.x = 0f;
+            }
+
+            _rigidbody.velocity = velocity;
+            _hasPushRequest = false;
+            _requestedDirection = 0f;
         }
 
         /// <summary>
-        /// 沿指定水平朝向持续施加一次推动力。
+        /// 登记当前物理步的玩家水平推动方向；未登记的物理步保持X位置锁定。
         /// </summary>
         public bool TryPush(float horizontalDirection)
         {
@@ -53,18 +98,24 @@ namespace Spotlight.Demos.Demo2
                 return false;
             }
 
-            float direction = horizontalDirection > 0f ? 1f : -1f;
-            float speedInDirection = _rigidbody.velocity.x * direction;
-            float availableSpeed = _maximumHorizontalSpeed - speedInDirection;
-            if (availableSpeed <= 0f)
-            {
-                return false;
-            }
-
-            float maximumForce = availableSpeed * _rigidbody.mass / Time.fixedDeltaTime;
-            float appliedForce = Mathf.Min(_pushForce, maximumForce);
-            _rigidbody.AddForce(Vector2.right * direction * appliedForce, ForceMode2D.Force);
+            _requestedDirection = horizontalDirection > 0f ? 1f : -1f;
+            _hasPushRequest = true;
             return true;
+        }
+
+        private void ApplyIdleLock()
+        {
+            _hasPushRequest = false;
+            _requestedDirection = 0f;
+            _rigidbody.constraints = _idleConstraints;
+            Vector2 velocity = _rigidbody.velocity;
+            velocity.x = 0f;
+            _rigidbody.velocity = velocity;
+        }
+
+        private static bool IsPositiveFinite(float value)
+        {
+            return value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
         }
     }
 }

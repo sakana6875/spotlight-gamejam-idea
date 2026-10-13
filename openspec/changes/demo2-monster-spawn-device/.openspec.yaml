@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-10-13
+goal: 完成多装置独立配置、阻挡等待和怪物运行时注入的刷怪闭环

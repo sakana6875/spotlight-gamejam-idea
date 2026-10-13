@@ -166,14 +166,13 @@ namespace Spotlight.Tests.PlayMode
 
             Demo2MonsterController monster = monsterObject.AddComponent<Demo2MonsterController>();
             SetPrivateField(monster, "_config", config);
-            SetPrivateField(monster, "_treeTarget", tree);
-            SetPrivateField(monster, "_simulationController", simulation);
             SetPrivateField(monster, "_rigidbody", rigidbody);
             SetPrivateField(monster, "_bodyCollider", bodyCollider);
             SetPrivateField(monster, "_spriteRenderer", spriteRenderer);
             SetPrivateField(monster, "_animator", animator);
             SetPrivateField(monster, "_visualRoot", visualRoot);
             monsterObject.SetActive(true);
+            Assert.That(monster.Initialize(tree, simulation), Is.True);
             return monster;
         }
 
