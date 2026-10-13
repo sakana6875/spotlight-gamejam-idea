@@ -82,7 +82,7 @@ namespace Spotlight.Demos.Demo2
         /// </summary>
         public bool TryPush()
         {
-            if (!_isConfigured || _simulationController.IsGameplayFrozen ||
+            if (!_isConfigured || _simulationController.IsGameplayFrozen || !_playerMoveController.CanPush ||
                 _playerMoveController.ViewMode != PlayerMoveController.Demo2ViewMode.Side)
             {
                 return false;

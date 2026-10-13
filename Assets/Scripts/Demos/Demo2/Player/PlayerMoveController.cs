@@ -8,6 +8,8 @@ namespace Spotlight.Demos.Demo2
     /// <summary>
     /// 处理 Demo2 玩家在侧视和俯视模式下的输入与 Rigidbody2D 移动规则。
     /// </summary>
+    [RequireComponent(typeof(Rigidbody2D))]
+    [RequireComponent(typeof(Animator))]
     public sealed class PlayerMoveController : MonoBehaviour
     {
         /// <summary>
@@ -44,8 +46,17 @@ namespace Spotlight.Demos.Demo2
         [Header("运行状态")]
         [SerializeField] private Demo2SimulationController _simulationController;
 
+        private static readonly int StateParameter = Animator.StringToHash("State");
+        private static readonly int IdleState = Animator.StringToHash("Base Layer.PlayerIdle");
+        private static readonly int MovingState = Animator.StringToHash("Base Layer.PlayerRun");
+        private static readonly int Attack1State = Animator.StringToHash("Base Layer.PlayerAttack1");
+        private static readonly int Attack2State = Animator.StringToHash("Base Layer.PlayerAttack2");
+        private static readonly int HitStunState = Animator.StringToHash("Base Layer.PlayerHitted");
+
         private Rigidbody2D _rigidbody;
+        private Animator _animator;
         private GameInputActions _input;
+        private Demo2PlayerStateMachine _playerStateMachine;
         private float _horizontalDirection;
         private float _sideGravityScale;
         private Vector2 _topMovementDirection;
@@ -54,14 +65,25 @@ namespace Spotlight.Demos.Demo2
         private bool _isGrounded;
         private bool _isFacingRight = true;
         private bool _isConfigured;
+        private bool _isAnimatorConfigured;
+        private Demo2PlayerState _appliedAnimatorState = (Demo2PlayerState)(-1);
         private Demo2ViewMode _viewMode = Demo2ViewMode.Side;
         private TopMovementAxis _topMovementAxis = TopMovementAxis.Horizontal;
-        
         public Demo2ViewMode ViewMode => _viewMode; // 当前视角模式
         /// <summary>
         /// 玩家当前在侧视规则下朝向右侧。
         /// </summary>
         public bool IsFacingRight => _isFacingRight;
+
+        /// <summary>
+        /// 玩家当前由玩法规则确定的状态。
+        /// </summary>
+        public Demo2PlayerState State => _playerStateMachine?.State ?? Demo2PlayerState.Idle;
+
+        /// <summary>
+        /// 当前玩家状态是否允许推动石头。
+        /// </summary>
+        public bool CanPush => _playerStateMachine != null && _playerStateMachine.CanPush;
 
         /// <summary>
         /// 玩家移动规则已经切换到指定视图模式的事实通知。
@@ -71,17 +93,21 @@ namespace Spotlight.Demos.Demo2
         private void Awake()
         {
             _rigidbody = GetComponent<Rigidbody2D>();
+            _animator = GetComponent<Animator>();
             _input = new GameInputActions();
+            _playerStateMachine = new Demo2PlayerStateMachine();
 
-            if (_rigidbody == null || _groundCheck == null)
+            if (_rigidbody == null || _animator == null || _groundCheck == null)
             {
-                Debug.LogError("PlayerMoveController 缺少 Rigidbody2D 或 GroundCheck 引用。", this);
+                Debug.LogError("PlayerMoveController 缺少 Rigidbody2D、Animator 或 GroundCheck 引用。", this);
                 enabled = false;
                 return;
             }
 
+            _isAnimatorConfigured = ValidateAnimatorConfiguration();
             _sideGravityScale = _rigidbody.gravityScale;
             _isConfigured = true;
+            ApplyAnimatorState();
         }
 
         private void OnEnable()
@@ -89,6 +115,8 @@ namespace Spotlight.Demos.Demo2
             if (_isConfigured)
             {
                 _input.Demo2.Enable();
+                _appliedAnimatorState = (Demo2PlayerState)(-1);
+                ApplyAnimatorState();
             }
         }
 
@@ -116,6 +144,24 @@ namespace Spotlight.Demos.Demo2
             }
 
             Vector2 moveInput = _input.Demo2.Move.ReadValue<Vector2>();
+            bool isMoving = _viewMode == Demo2ViewMode.Side
+                ? !Mathf.Approximately(moveInput.x, 0f)
+                : !Mathf.Approximately(moveInput.x, 0f) || !Mathf.Approximately(moveInput.y, 0f);
+            bool attackPressed = _input.Demo2.Attack.WasPressedThisFrame();
+
+            if (_viewMode == Demo2ViewMode.Side && !Mathf.Approximately(moveInput.x, 0f))
+            {
+                SetFacingDirection(moveInput.x > 0f);
+            }
+
+            _playerStateMachine.Advance(Time.deltaTime, isMoving, attackPressed);
+            ApplyAnimatorState();
+
+            if (!_playerStateMachine.CanMove)
+            {
+                ClearControlInput();
+                return;
+            }
 
             if (_viewMode == Demo2ViewMode.Side)
             {
@@ -135,7 +181,10 @@ namespace Spotlight.Demos.Demo2
 
             if (_viewMode == Demo2ViewMode.Top)
             {
-                _rigidbody.velocity = _topMovementDirection * _moveSpeed;
+                _rigidbody.velocity = _playerStateMachine.CanMove
+                    ? _topMovementDirection * _moveSpeed
+                    : Vector2.zero;
+                _jumpRequested = false;
                 return;
             }
 
@@ -145,9 +194,9 @@ namespace Spotlight.Demos.Demo2
                 _groundLayer);
 
             Vector2 velocity = _rigidbody.velocity;
-            velocity.x = _horizontalDirection * _moveSpeed;
+            velocity.x = _playerStateMachine.CanMove ? _horizontalDirection * _moveSpeed : 0f;
 
-            if (_isGrounded && _jumpRequested)
+            if (_playerStateMachine.CanMove && _isGrounded && _jumpRequested)
             {
                 velocity.y = CalculateJumpSpeed();
             }
@@ -161,11 +210,16 @@ namespace Spotlight.Demos.Demo2
         private void ClearMovementState()
         {
             _rigidbody.velocity = Vector2.zero;
+            ClearControlInput();
+            _isGrounded = false;
+        }
+
+        private void ClearControlInput()
+        {
             _horizontalDirection = 0f;
             _topMovementDirection = Vector2.zero;
             _previousMoveInput = Vector2.zero;
             _jumpRequested = false;
-            _isGrounded = false;
         }
 
         private void SetPositionImmediately(Vector2 position)
@@ -176,6 +230,36 @@ namespace Spotlight.Demos.Demo2
             transform.position = transformPosition;
             _rigidbody.position = position;
             Physics2D.SyncTransforms();
+        }
+
+        /// <summary>
+        /// 中断当前动作并进入玩家受击硬直。
+        /// </summary>
+        public bool TryEnterHitStun()
+        {
+            if (!_isConfigured || !_playerStateMachine.TryEnterHitStun())
+            {
+                return false;
+            }
+
+            ClearControlInput();
+            ApplyAnimatorState();
+            return true;
+        }
+
+        /// <summary>
+        /// 在视角转场开始前取消攻击、受击和二段排队。
+        /// </summary>
+        public void CancelCurrentActionForViewTransition()
+        {
+            if (!_isConfigured)
+            {
+                return;
+            }
+
+            _playerStateMachine.CancelCurrentAction();
+            ClearMovementState();
+            ApplyAnimatorState();
         }
 
         /// <summary>
@@ -254,6 +338,49 @@ namespace Spotlight.Demos.Demo2
             }
 
             _previousMoveInput = moveInput;
+        }
+
+        private bool ValidateAnimatorConfiguration()
+        {
+            if (_animator.runtimeAnimatorController == null)
+            {
+                return false;
+            }
+
+            bool hasStateParameter = false;
+            foreach (AnimatorControllerParameter parameter in _animator.parameters)
+            {
+                if (parameter.nameHash == StateParameter && parameter.type == AnimatorControllerParameterType.Int)
+                {
+                    hasStateParameter = true;
+                    break;
+                }
+            }
+
+            bool hasRequiredStates = _animator.HasState(0, IdleState) &&
+                _animator.HasState(0, MovingState) &&
+                _animator.HasState(0, Attack1State) &&
+                _animator.HasState(0, Attack2State) &&
+                _animator.HasState(0, HitStunState);
+
+            if (!hasStateParameter || !hasRequiredStates)
+            {
+                Debug.LogError("Demo2 玩家 Animator 缺少 State 参数或必需动画状态。", this);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ApplyAnimatorState()
+        {
+            if (!_isAnimatorConfigured || _appliedAnimatorState == _playerStateMachine.State)
+            {
+                return;
+            }
+
+            _appliedAnimatorState = _playerStateMachine.State;
+            _animator.SetInteger(StateParameter, (int)_appliedAnimatorState);
         }
 
         private float CalculateJumpSpeed()

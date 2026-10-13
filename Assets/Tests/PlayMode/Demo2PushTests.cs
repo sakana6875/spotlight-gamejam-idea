@@ -100,6 +100,38 @@ namespace Spotlight.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator HitStun_PreventsPushFromReachingObstacle()
+        {
+            Demo2SimulationController simulationController = CreateSimulationController();
+            PlayerMoveController player = CreatePlayer(simulationController);
+            Demo2PushController pushController = player.GetComponent<Demo2PushController>();
+            Demo2PushableObstacle obstacle = CreatePushableObstacle(new Vector2(1.05f, 0f));
+            Physics2D.SyncTransforms();
+
+            Assert.That(player.TryEnterHitStun(), Is.True);
+            Assert.That(pushController.TryPush(), Is.False);
+            yield return new WaitForFixedUpdate();
+
+            Assert.That(obstacle.Rigidbody.velocity, Is.EqualTo(Vector2.zero));
+        }
+
+        [UnityTest]
+        public IEnumerator AirborneActionLock_StopsHorizontalControlButPreservesGravity()
+        {
+            Demo2SimulationController simulationController = CreateSimulationController();
+            PlayerMoveController player = CreatePlayer(simulationController);
+            Rigidbody2D playerBody = player.GetComponent<Rigidbody2D>();
+            playerBody.gravityScale = 1f;
+            playerBody.velocity = new Vector2(2f, -1f);
+
+            Assert.That(player.TryEnterHitStun(), Is.True);
+            yield return new WaitForFixedUpdate();
+
+            Assert.That(playerBody.velocity.x, Is.EqualTo(0f).Within(0.001f));
+            Assert.That(playerBody.velocity.y, Is.LessThan(-1f));
+        }
+
+        [UnityTest]
         public IEnumerator PushableObstacle_RemainsBlockedByWall()
         {
             Demo2SimulationController simulationController = CreateSimulationController();

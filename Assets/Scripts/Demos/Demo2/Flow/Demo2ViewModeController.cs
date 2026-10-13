@@ -94,6 +94,8 @@ namespace Spotlight.Demos.Demo2
                 return false;
             }
 
+            _playerMoveController.CancelCurrentActionForViewTransition();
+
             _isTransitioning = true;
             _transitionRoutine = StartCoroutine(TransitionView());
             return true;

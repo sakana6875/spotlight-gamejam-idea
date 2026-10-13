@@ -35,7 +35,10 @@ namespace Spotlight.Tests.PlayMode
                 sideView,
                 topView);
 
+            Assert.That(playerMoveController.TryEnterHitStun(), Is.True);
+            Assert.That(playerMoveController.State, Is.EqualTo(Demo2PlayerState.HitStun));
             Assert.That(viewModeController.TrySwitchView(), Is.True);
+            Assert.That(playerMoveController.State, Is.EqualTo(Demo2PlayerState.Idle));
 
             yield return new WaitForSecondsRealtime(0.75f);
 
@@ -59,13 +62,17 @@ namespace Spotlight.Tests.PlayMode
             Assert.That(cameraFollowController.transform.position, Is.EqualTo(new Vector3(10f, 0f, -10f)));
 
             Rigidbody2D playerBody = playerMoveController.GetComponent<Rigidbody2D>();
+            playerMoveController.transform.position = new Vector3(1f, 0f, 0f);
             playerBody.position = new Vector2(1f, 0f);
             Physics2D.SyncTransforms();
+            yield return null;
             yield return null;
 
             Assert.That(cameraFollowController.transform.position, Is.EqualTo(new Vector3(11f, 0f, -10f)));
 
+            playerMoveController.transform.position = new Vector3(4f, -5f, 0f);
             playerBody.position = new Vector2(4f, -5f);
+            Physics2D.SyncTransforms();
 
             Assert.That(viewModeController.TrySwitchView(), Is.True);
 
@@ -81,6 +88,24 @@ namespace Spotlight.Tests.PlayMode
             Assert.That(simulationController.IsGameplayFrozen, Is.False);
             Assert.That(cameraFollowController.IsFollowing, Is.True);
             Assert.That(blackoutCanvasGroup.alpha, Is.EqualTo(0f));
+        }
+
+        [UnityTest]
+        public IEnumerator GameplayFreeze_PausesAndResumesPlayerStateTime()
+        {
+            Time.timeScale = 1f;
+            Demo2SimulationController simulationController = CreateSimulationController();
+            PlayerMoveController playerMoveController = CreatePlayerMoveController(simulationController);
+
+            Assert.That(playerMoveController.TryEnterHitStun(), Is.True);
+            simulationController.AcquirePause(Demo2PauseReason.Dialogue);
+
+            yield return new WaitForSecondsRealtime(0.6f);
+            Assert.That(playerMoveController.State, Is.EqualTo(Demo2PlayerState.HitStun));
+
+            simulationController.ReleasePause(Demo2PauseReason.Dialogue);
+            yield return new WaitForSeconds(0.51f);
+            Assert.That(playerMoveController.State, Is.EqualTo(Demo2PlayerState.Idle));
         }
 
         [UnityTearDown]
