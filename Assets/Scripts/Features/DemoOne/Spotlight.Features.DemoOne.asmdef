@@ -3,7 +3,9 @@
     "rootNamespace": "Spotlight.Features.DemoOne",
     "references": [
         "Spotlight.Contracts",
-        "Spotlight.Application"
+        "Spotlight.Application",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

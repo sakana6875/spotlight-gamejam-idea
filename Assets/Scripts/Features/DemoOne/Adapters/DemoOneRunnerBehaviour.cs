@@ -1,18 +1,35 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class DemoOneRunnerBehaviour : MonoBehaviour
+namespace Spotlight.Features.DemoOne.Adapters
 {
-    // Start is called before the first frame update
-    void Start()
+    /// <summary>
+    /// Demo1 场景主驱动。每帧把歌曲时间和 Pulse 输入送入 Controller。
+    /// 不承载玩法规则，也不直接操作 UI、音频或粒子。
+    /// </summary>
+    public sealed class DemoOneRunnerBehaviour : MonoBehaviour
     {
-        
-    }
+        private Application.IDemoOneRunController _controller;
+        private SongClockAdapter _clock;
+        private Contracts.IInputPulseReader _pulse;
+        private bool _initialized;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        public void Initialize(
+            Application.IDemoOneRunController controller,
+            SongClockAdapter clock,
+            Contracts.IInputPulseReader pulse)
+        {
+            _controller = controller;
+            _clock = clock;
+            _pulse = pulse;
+            _initialized = true;
+        }
+
+        private void Update()
+        {
+            if (!_initialized) return;
+            float songTime = _clock.GetSongTimeSeconds();
+            bool pulse = _pulse.PulsePressed;
+            _controller.Tick(songTime, pulse);
+        }
     }
 }
