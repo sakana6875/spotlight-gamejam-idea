@@ -1,18 +1,20 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using Spotlight.Features.DemoOne.Domain.Rhythm;
 
-public class JudgeWindowConfigAsset : MonoBehaviour
+namespace Spotlight.Features.DemoOne.Data
 {
-    // Start is called before the first frame update
-    void Start()
+    /// <summary>
+    /// 判定窗口配置资产。默认值与 spec 一致：Perfect ±60ms，Good ±120ms。
+    /// </summary>
+    [CreateAssetMenu(fileName = "JudgeWindowConfigAsset", menuName = "Spotlight/Demo1/Judge Window Config")]
+    public sealed class JudgeWindowConfigAsset : ScriptableObject
     {
-        
-    }
+        [SerializeField] private float _perfectSeconds = 0.060f;
+        [SerializeField] private float _goodSeconds = 0.120f;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+        public JudgeWindow ToDomain()
+        {
+            return new JudgeWindow(_perfectSeconds, _goodSeconds);
+        }
     }
 }

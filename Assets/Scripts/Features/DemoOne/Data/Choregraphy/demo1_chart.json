@@ -1,0 +1,23 @@
+{
+  "songId": "demo1_spring_theme",
+  "bpm": 120,
+  "offset": 0.0,
+  "notes": [
+    {
+      "time": 1.000,
+      "index": 0
+    },
+    {
+      "time": 1.500,
+      "index": 1
+    },
+    {
+      "time": 2.000,
+      "index": 2
+    },
+    {
+      "time": 2.500,
+      "index": 3
+    }
+  ]
+}
