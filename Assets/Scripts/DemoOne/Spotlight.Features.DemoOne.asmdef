@@ -1,0 +1,17 @@
+{
+    "name": "Spotlight.Features.DemoOne",
+    "rootNamespace": "Spotlight.Features.DemoOne",
+    "references": [
+        "Spotlight.Domain",
+        "Spotlight.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
