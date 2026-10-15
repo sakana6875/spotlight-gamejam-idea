@@ -4,7 +4,7 @@ namespace Spotlight.Features.DemoOne.Domain.Rhythm
 {
     /// <summary>
     /// 纯判定引擎：给定玩家输入的时间偏差，输出判定结果。
-    /// 不负责推进 note 指针、不负责自动超时，这两件事由调用方（NoteTracker）负责。
+    /// 不负责推进 note 指针、不负责自动超时，这两件事由调用方（DemoOneRunController）负责。
     /// </summary>
     public sealed class RhythmJudgeEngine
     {
@@ -41,6 +41,16 @@ namespace Spotlight.Features.DemoOne.Domain.Rhythm
         public bool IsExpired(float songTimeSeconds, float noteTimeSeconds)
         {
             return songTimeSeconds - noteTimeSeconds > _window.GoodSeconds;
+        }
+
+        /// <summary>
+        /// 判断输入是否早于 Good 窗口左边界，即"按太早"。
+        /// 玩法层用它来忽略太早的输入，避免玩家误触浪费后续 note。
+        /// </summary>
+        /// <param name="deltaSeconds">玩家输入时间 - note 目标时间（秒）。</param>
+        public bool IsTooEarly(float deltaSeconds)
+        {
+            return deltaSeconds < -_window.GoodSeconds;
         }
     }
 }
