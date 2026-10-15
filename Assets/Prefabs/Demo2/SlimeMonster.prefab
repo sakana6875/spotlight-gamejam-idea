@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6491665523038477371}
   - component: {fileID: 3351666372827171000}
   - component: {fileID: 554592936059986335}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: SlimeMonster
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -138,7 +138,7 @@ GameObject:
   - component: {fileID: 7210131424946641491}
   - component: {fileID: 7916227317039681080}
   - component: {fileID: 1238976330303106015}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -17,3 +17,6 @@ MonoBehaviour:
   _biteDistance: 0.5
   _hitStunDurationSeconds: 0.5
   _deathDurationSeconds: 0.5
+  _jumpHeight: 3.5
+  _obstacleDetectionDistance: 0.35
+  _landingRetrySeconds: 0.3

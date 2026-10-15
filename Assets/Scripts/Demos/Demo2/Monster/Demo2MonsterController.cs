@@ -10,6 +10,9 @@ namespace Spotlight.Demos.Demo2
     public sealed class Demo2MonsterController : MonoBehaviour, IMonster
     {
         private static readonly int StateParameter = Animator.StringToHash("State");
+        private static readonly Color HitStunTint = new Color(1f, 0.55f, 0.55f, 1f);
+        private const int ContactCapacity = 8;
+        private const int ObstacleCapacity = 8;
 
         [Header("规则")]
         [SerializeField] private Demo2MonsterConfig _config;
@@ -23,6 +26,9 @@ namespace Spotlight.Demos.Demo2
         [SerializeField] private Animator _animator;
         [SerializeField] private GameObject _visualRoot;
 
+        private readonly ContactPoint2D[] _contactResults = new ContactPoint2D[ContactCapacity];
+        private readonly RaycastHit2D[] _obstacleResults = new RaycastHit2D[ObstacleCapacity];
+
         private Demo2MonsterStateMachine _stateMachine;
         private Color _normalColor;
         private Demo2MonsterState _appliedAnimatorState = (Demo2MonsterState)(-1);
@@ -30,6 +36,12 @@ namespace Spotlight.Demos.Demo2
         private bool _isInitialized;
         private bool _isRegisteredAsAttacker;
         private bool _hasPublishedDeath;
+        private ContactFilter2D _solidContactFilter;
+        private float _landingRetryRemaining;
+        private bool _hasGroundSample;
+        private bool _wasGrounded;
+        private bool _isAutoJumpInProgress;
+        private bool _hasLeftGroundSinceJump;
 
         /// <summary>
         /// 怪物是否已完成配置并仍处于存活状态。
@@ -85,6 +97,9 @@ namespace Spotlight.Demos.Demo2
                 _config.HitStunDurationSeconds,
                 _config.DeathDurationSeconds);
             _normalColor = _spriteRenderer.color;
+            _solidContactFilter = new ContactFilter2D();
+            _solidContactFilter.NoFilter();
+            _solidContactFilter.useTriggers = false;
             _isSelfConfigured = true;
             ApplyAnimatorState();
         }
@@ -109,6 +124,7 @@ namespace Spotlight.Demos.Demo2
                 return;
             }
 
+            ResetJumpTracking();
             _appliedAnimatorState = (Demo2MonsterState)(-1);
             _stateMachine.Advance(0f, IsWithinBiteDistance());
             ApplyStateEffects();
@@ -124,6 +140,7 @@ namespace Spotlight.Demos.Demo2
             UnregisterFromTree();
             SetHorizontalVelocity(0f);
             _spriteRenderer.color = _normalColor;
+            ResetJumpTracking();
         }
 
         private void OnDestroy()
@@ -159,6 +176,11 @@ namespace Spotlight.Demos.Demo2
                 return;
             }
 
+            _landingRetryRemaining = Mathf.Max(
+                0f,
+                _landingRetryRemaining - Time.fixedDeltaTime);
+            bool isGrounded = UpdateGroundState();
+
             if (_stateMachine.State != Demo2MonsterState.Moving || IsWithinBiteDistance())
             {
                 SetHorizontalVelocity(0f);
@@ -168,6 +190,12 @@ namespace Spotlight.Demos.Demo2
             float direction = _treeTarget.transform.position.x > transform.position.x ? 1f : -1f;
             SetHorizontalVelocity(direction * _config.MoveSpeed);
             SetFacingDirection(direction);
+
+            if (isGrounded && !_isAutoJumpInProgress && _landingRetryRemaining <= 0f &&
+                HasForwardObstacle(direction))
+            {
+                ApplyJumpVelocity();
+            }
         }
 
         /// <summary>
@@ -223,8 +251,10 @@ namespace Spotlight.Demos.Demo2
                 }
             }
 
+            Color hitStunColor = HitStunTint;
+            hitStunColor.a = _normalColor.a;
             _spriteRenderer.color = currentState == Demo2MonsterState.HitStun
-                ? Color.Lerp(_normalColor, Color.white, 0.75f)
+                ? hitStunColor
                 : _normalColor;
 
             ApplyAnimatorState();
@@ -255,6 +285,84 @@ namespace Spotlight.Demos.Demo2
         {
             float horizontalDistance = Mathf.Abs(_treeTarget.transform.position.x - transform.position.x);
             return horizontalDistance <= _config.BiteDistance;
+        }
+
+        private void ResetJumpTracking()
+        {
+            _landingRetryRemaining = 0f;
+            _hasGroundSample = false;
+            _wasGrounded = false;
+            _isAutoJumpInProgress = false;
+            _hasLeftGroundSinceJump = false;
+        }
+
+        private bool UpdateGroundState()
+        {
+            int contactCount = _bodyCollider.GetContacts(_solidContactFilter, _contactResults);
+            bool isGrounded = false;
+            for (int index = 0; index < contactCount; index++)
+            {
+                if (_contactResults[index].normal.y > 0.5f)
+                {
+                    isGrounded = true;
+                    break;
+                }
+            }
+
+            if (_isAutoJumpInProgress)
+            {
+                if (!isGrounded)
+                {
+                    _hasLeftGroundSinceJump = true;
+                }
+                else if (_hasGroundSample && !_wasGrounded && _hasLeftGroundSinceJump)
+                {
+                    _isAutoJumpInProgress = false;
+                    _hasLeftGroundSinceJump = false;
+                    _landingRetryRemaining = _config.LandingRetrySeconds;
+                }
+            }
+
+            _hasGroundSample = true;
+            _wasGrounded = isGrounded;
+            return isGrounded;
+        }
+
+        private bool HasForwardObstacle(float direction)
+        {
+            int hitCount = _bodyCollider.Cast(
+                new Vector2(direction, 0f),
+                _solidContactFilter,
+                _obstacleResults,
+                _config.ObstacleDetectionDistance);
+
+            for (int index = 0; index < hitCount; index++)
+            {
+                RaycastHit2D hit = _obstacleResults[index];
+                if (hit.collider == null || hit.normal.x * direction > -0.5f)
+                {
+                    continue;
+                }
+
+                Demo2TreeController hitTree = hit.collider.GetComponentInParent<Demo2TreeController>();
+                if (hitTree != _treeTarget)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ApplyJumpVelocity()
+        {
+            float downwardAcceleration = -(Physics2D.gravity.y * _rigidbody.gravityScale);
+            float jumpSpeed = Mathf.Sqrt(2f * downwardAcceleration * _config.JumpHeight);
+            Vector2 velocity = _rigidbody.velocity;
+            velocity.y = jumpSpeed;
+            _rigidbody.velocity = velocity;
+            _isAutoJumpInProgress = true;
+            _hasLeftGroundSinceJump = false;
         }
 
         private void SetHorizontalVelocity(float velocityX)
@@ -319,6 +427,13 @@ namespace Spotlight.Demos.Demo2
                 return false;
             }
 
+            float downwardAcceleration = -(Physics2D.gravity.y * _rigidbody.gravityScale);
+            if (!IsPositiveFinite(downwardAcceleration))
+            {
+                error = "Rigidbody2D必须具有有限的向下重力。";
+                return false;
+            }
+
             if (_animator.runtimeAnimatorController == null)
             {
                 error = "Animator 必须配置 RuntimeAnimatorController。";
@@ -336,6 +451,11 @@ namespace Spotlight.Demos.Demo2
 
             error = "Animator 缺少 Int 类型的 State 参数。";
             return false;
+        }
+
+        private static bool IsPositiveFinite(float value)
+        {
+            return value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private void DisableForInvalidConfiguration(string reason)

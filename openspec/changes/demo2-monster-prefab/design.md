@@ -81,14 +81,14 @@
 
 ### 8. Animator 资源由 Editor 配置
 
-代码只写整数 `State`：`0=Moving`、`1=Biting`、`2=HitStun`、`3=Dead`。啃食可在 Animator 中复用待机 Motion；受击可保持当前 Motion，控制器用 SpriteRenderer 原色与白色切换提供反馈；死亡状态播放项目负责人切出的3帧 Clip。
+代码只写整数 `State`：`0=Moving`、`1=Biting`、`2=HitStun`、`3=Dead`。啃食可在 Animator 中复用待机 Motion；受击可保持当前 Motion，控制器把SpriteRenderer从原色切为浅红色提供反馈并在硬直结束恢复；死亡状态播放项目负责人切出的3帧 Clip。
 
 控制器校验参数类型但不校验状态名或创建 Transition。状态图、Clip循环与Sprite切片属于 Editor 验收，不用 Editor 脚本生成。
 
 ## Risks / Trade-offs
 
 - [Prefab 场景引用不能保存在 Prefab 资产中] → 每个场景实例必须在 Inspector 覆盖树苗和暂停引用，并放在 `SideView` 根节点下；缺失时立即报错并禁用，不自动查找。
-- [受击与啃食暂时缺少专用美术] → 保持稳定状态参数，暂用闪白与待机 Motion；替换 Clip 不改玩法代码。
+- [受击与啃食暂时缺少专用美术] → 保持稳定状态参数，暂用浅红色反馈与待机 Motion；替换 Clip 不改玩法代码。
 - [水平距离不处理复杂地形] → 当前只支持侧视直线守树小怪；需要平台跨越或绕障时建立独立 Change。
 - [死亡事件早于 GameObject 销毁] → 事件明确表示生命已归零，不表示视觉对象已消失；后续波次必须按该事实统计。
 - [代码交付无法完成最终视觉验证] → 自动测试验证状态和运行时生命周期；Prefab、动画、Collider尺寸与场景表现明确标记为 Editor 验证未完成。

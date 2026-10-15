@@ -14,6 +14,11 @@ namespace Spotlight.Demos.Demo2
         [SerializeField] private float _hitStunDurationSeconds = 0.5f;
         [SerializeField] private float _deathDurationSeconds = 0.5f;
 
+        [Header("跳跃")]
+        [SerializeField] private float _jumpHeight = 3.5f;
+        [SerializeField] private float _obstacleDetectionDistance = 0.35f;
+        [SerializeField] private float _landingRetrySeconds = 0.3f;
+
         /// <summary>
         /// 初始及最大生命值。
         /// </summary>
@@ -38,6 +43,21 @@ namespace Spotlight.Demos.Demo2
         /// 生命归零后保留死亡表现的秒数。
         /// </summary>
         public float DeathDurationSeconds => _deathDurationSeconds;
+
+        /// <summary>
+        /// 自动跳跃的目标最高点相对起跳点高度，单位为米。
+        /// </summary>
+        public float JumpHeight => _jumpHeight;
+
+        /// <summary>
+        /// 身体沿朝树方向检测前方实体障碍的距离，单位为米。
+        /// </summary>
+        public float ObstacleDetectionDistance => _obstacleDetectionDistance;
+
+        /// <summary>
+        /// 自动跳跃落地后再次允许起跳前的等待秒数。
+        /// </summary>
+        public float LandingRetrySeconds => _landingRetrySeconds;
 
         /// <summary>
         /// 验证所有数值能否安全创建怪物状态模型。
@@ -74,6 +94,24 @@ namespace Spotlight.Demos.Demo2
                 return false;
             }
 
+            if (!IsPositiveFinite(_jumpHeight))
+            {
+                error = "跳跃高度必须是有限正数。";
+                return false;
+            }
+
+            if (!IsPositiveFinite(_obstacleDetectionDistance))
+            {
+                error = "障碍检测距离必须是有限正数。";
+                return false;
+            }
+
+            if (!IsNonNegativeFinite(_landingRetrySeconds))
+            {
+                error = "落地重试间隔必须是有限非负数。";
+                return false;
+            }
+
             error = string.Empty;
             return true;
         }
@@ -81,6 +119,11 @@ namespace Spotlight.Demos.Demo2
         private static bool IsPositiveFinite(float value)
         {
             return value > 0f && !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+        private static bool IsNonNegativeFinite(float value)
+        {
+            return value >= 0f && !float.IsNaN(value) && !float.IsInfinity(value);
         }
     }
 }

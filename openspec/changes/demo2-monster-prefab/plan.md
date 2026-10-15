@@ -4,7 +4,7 @@
 
 1. 在 `Assets/Scripts/Demos/Demo2/Monster/` 增加窄 `IMonster`、伤害结果枚举和 `Demo2MonsterConfig` ScriptableObject 类型，先固定配置校验与公开合同。
 2. 增加纯 C# `Demo2MonsterStateMachine`，实现30点配置生命、移动/啃食转换、0.5秒可重置受击硬直、立即死亡事实和0.5秒死亡计时。
-3. 增加 `Demo2MonsterController`，通过 Inspector 引用适配 Rigidbody2D、树苗登记、侧视根节点启停、全局冻结、Animator `State` 和受击闪白。
+3. 增加 `Demo2MonsterController`，通过 Inspector 引用适配 Rigidbody2D、树苗登记、侧视根节点启停、全局冻结、Animator `State` 和受击浅红反馈。
 4. 增加 EditMode 行为测试，覆盖非法伤害、三次10点伤害、重复受击重置、啃食中断、死亡一次性和计时暂停所需的纯规则。
 5. 增加目标 PlayMode 测试，动态组装运行时对象验证水平移动保留重力、树苗登记清理、GameObject启停暂停和死亡后销毁；不创建正式 Prefab或场景资源。
 6. 编译生产、EditMode 与 PlayMode 程序集，执行目标测试，并记录未完成的 Editor 资源与视觉验证。

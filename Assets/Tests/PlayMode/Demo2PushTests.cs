@@ -211,10 +211,20 @@ namespace Spotlight.Tests.PlayMode
             groundCheck.transform.SetParent(playerObject.transform, false);
             groundCheck.transform.localPosition = Vector3.down;
 
+            GameObject attackPoint = CreateObject("AttackPoint");
+            attackPoint.transform.SetParent(playerObject.transform, false);
+            attackPoint.transform.localPosition = new Vector3(0.9f, 0f, 0f);
+
+            Demo2PlayerMeleeAttack meleeAttack = playerObject.AddComponent<Demo2PlayerMeleeAttack>();
+            SetPrivateField(meleeAttack, "_attackPoint", attackPoint.transform);
+            SetPrivateField(meleeAttack, "_monsterLayers", (LayerMask)(1 << LayerMask.NameToLayer("Monster")));
+            SetPrivateField(meleeAttack, "_obstacleLayers", (LayerMask)(1 << LayerMask.NameToLayer("SideWall")));
+
             PlayerMoveController player = playerObject.AddComponent<PlayerMoveController>();
             Demo2PushController pushController = playerObject.AddComponent<Demo2PushController>();
             SetPrivateField(player, "_groundCheck", groundCheck.transform);
             SetPrivateField(player, "_simulationController", simulationController);
+            SetPrivateField(player, "_meleeAttack", meleeAttack);
             SetPrivateField(pushController, "_simulationController", simulationController);
             SetPrivateField(pushController, "_castDistance", 0.1f);
             playerObject.SetActive(true);

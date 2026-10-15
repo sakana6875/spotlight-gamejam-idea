@@ -123,12 +123,12 @@
 
 ### Requirement: Animator 只消费稳定状态参数
 
-运行时组件 MUST 只通过整数 `State` 参数表达当前状态，稳定映射为 `0=Moving`、`1=Biting`、`2=HitStun`、`3=Dead`。受击期间组件 MUST 使用 SpriteRenderer 闪白提供临时反馈并在离开受击状态时恢复原颜色。代码 MUST NOT 创建 Animator 状态、Transition、Clip 或 Sprite 切片。
+运行时组件 MUST 只通过整数 `State` 参数表达当前状态，稳定映射为 `0=Moving`、`1=Biting`、`2=HitStun`、`3=Dead`。受击期间组件 MUST 使用SpriteRenderer浅红色提供临时反馈并在离开受击状态时恢复原颜色；默认白色Sprite也必须产生可见色差。代码 MUST NOT 创建 Animator 状态、Transition、Clip 或 Sprite 切片。
 
 #### Scenario: 项目负责人组装动画
 
 - **WHEN** Prefab Animator 按稳定映射配置移动、啃食、受击和死亡状态
-- **THEN** 运行时代码仅更新 `State` 参数，啃食可复用待机 Clip，受击可保持当前帧并由闪白反馈
+- **THEN** 运行时代码仅更新 `State` 参数，啃食可复用待机 Clip，受击可保持当前帧并由浅红色反馈
 
 #### Scenario: Animator 缺少 State 参数
 

@@ -32,7 +32,7 @@ namespace Spotlight.Tests.PlayMode
             yield return new WaitForFixedUpdate();
 
             Assert.That(monsterBody.velocity.x, Is.EqualTo(1f).Within(0.01f));
-            Assert.That(monsterBody.velocity.y, Is.EqualTo(-2f).Within(0.01f));
+            Assert.That(monsterBody.velocity.y, Is.LessThan(-2f));
 
             monster.transform.position = new Vector2(1.6f, 0f);
             monsterBody.position = monster.transform.position;
@@ -45,6 +45,8 @@ namespace Spotlight.Tests.PlayMode
 
             Assert.That(monster.TryTakeDamage(10), Is.EqualTo(MonsterDamageResult.Applied));
             yield return null;
+            SpriteRenderer monsterRenderer = monster.GetComponentInChildren<SpriteRenderer>();
+            Assert.That(monsterRenderer.color, Is.EqualTo(new Color(1f, 0.55f, 0.55f, 1f)));
             float biteSecondsAfterHit = tree.AccumulatedBiteSeconds;
             yield return new WaitForSeconds(0.08f);
 
@@ -53,6 +55,7 @@ namespace Spotlight.Tests.PlayMode
 
             yield return new WaitForSeconds(0.43f);
             Assert.That(monster.State, Is.EqualTo(Demo2MonsterState.Biting));
+            Assert.That(monsterRenderer.color, Is.EqualTo(Color.white));
             monster.gameObject.SetActive(false);
             yield return null;
             float biteSecondsAfterDisable = tree.AccumulatedBiteSeconds;
@@ -122,6 +125,124 @@ namespace Spotlight.Tests.PlayMode
             Assert.That(monster.IsAlive, Is.False);
         }
 
+        [UnityTest]
+        public IEnumerator MovingMonster_JumpsOverForwardBoxAndKeepsHorizontalSpeed()
+        {
+            Demo2SimulationController simulation = CreateObject("Simulation")
+                .AddComponent<Demo2SimulationController>();
+            Demo2TreeController tree = CreateReadyTree(new Vector2(10f, 0f));
+            yield return WaitForTreeReady(tree);
+            CreateStaticBox("Ground", new Vector2(0f, -0.8f), new Vector2(20f, 0.1f), false);
+            CreateStaticBox("Obstacle", new Vector2(0.95f, -0.25f), new Vector2(0.5f, 1f), false);
+            Demo2MonsterController monster = CreateMonster(tree, simulation, Vector2.zero);
+            Rigidbody2D body = monster.GetComponent<Rigidbody2D>();
+            Physics2D.SyncTransforms();
+
+            float timeout = 1f;
+            while (body.velocity.y <= 0.5f && timeout > 0f)
+            {
+                timeout -= Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(body.velocity.y, Is.GreaterThan(0.5f));
+            Assert.That(body.velocity.x, Is.EqualTo(1f).Within(0.05f));
+            Assert.That(monster.State, Is.EqualTo(Demo2MonsterState.Moving));
+        }
+
+        [UnityTest]
+        public IEnumerator TargetTreeAndTrigger_DoNotCauseJump()
+        {
+            Demo2SimulationController simulation = CreateObject("Simulation")
+                .AddComponent<Demo2SimulationController>();
+            Demo2TreeController tree = CreateReadyTree(new Vector2(1.2f, 0f));
+            yield return WaitForTreeReady(tree);
+            CreateStaticBox("Ground", new Vector2(0f, -0.8f), new Vector2(20f, 0.1f), false);
+            CreateStaticBox("Trigger", new Vector2(0.65f, -0.25f), new Vector2(0.2f, 1f), true);
+            Demo2MonsterController monster = CreateMonster(tree, simulation, Vector2.zero);
+            Rigidbody2D body = monster.GetComponent<Rigidbody2D>();
+            Physics2D.SyncTransforms();
+
+            float maximumYVelocity = float.MinValue;
+            for (int step = 0; step < 30; step++)
+            {
+                yield return new WaitForFixedUpdate();
+                maximumYVelocity = Mathf.Max(maximumYVelocity, body.velocity.y);
+            }
+
+            Assert.That(maximumYVelocity, Is.LessThan(0.5f));
+            Assert.That(monster.State, Is.EqualTo(Demo2MonsterState.Moving));
+        }
+
+        [UnityTest]
+        public IEnumerator HitStun_BlocksJumpButPreservesGravity()
+        {
+            Demo2SimulationController simulation = CreateObject("Simulation")
+                .AddComponent<Demo2SimulationController>();
+            Demo2TreeController tree = CreateReadyTree(new Vector2(10f, 0f));
+            yield return WaitForTreeReady(tree);
+            CreateStaticBox("Ground", new Vector2(0f, -0.8f), new Vector2(20f, 0.1f), false);
+            CreateStaticBox("Obstacle", new Vector2(0.65f, -0.25f), new Vector2(0.2f, 1f), false);
+            Demo2MonsterController monster = CreateMonster(tree, simulation, Vector2.zero);
+            Rigidbody2D body = monster.GetComponent<Rigidbody2D>();
+            Assert.That(monster.TryTakeDamage(10), Is.EqualTo(MonsterDamageResult.Applied));
+            Physics2D.SyncTransforms();
+
+            for (int step = 0; step < 10; step++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(body.velocity.x, Is.EqualTo(0f).Within(0.01f));
+            Assert.That(body.velocity.y, Is.LessThanOrEqualTo(0.1f));
+            Assert.That(monster.State, Is.EqualTo(Demo2MonsterState.HitStun));
+        }
+
+        [UnityTest]
+        public IEnumerator FailedWallJump_WaitsAfterLandingBeforeRetry()
+        {
+            Demo2SimulationController simulation = CreateObject("Simulation")
+                .AddComponent<Demo2SimulationController>();
+            Demo2TreeController tree = CreateReadyTree(new Vector2(10f, 0f));
+            yield return WaitForTreeReady(tree);
+            CreateStaticBox("Ground", new Vector2(0f, -0.8f), new Vector2(20f, 0.1f), false);
+            CreateStaticBox("HighWall", new Vector2(0.65f, 1.25f), new Vector2(0.2f, 4f), false);
+            Demo2MonsterController monster = CreateMonster(tree, simulation, Vector2.zero);
+            Rigidbody2D body = monster.GetComponent<Rigidbody2D>();
+            Physics2D.SyncTransforms();
+
+            float timeout = 1f;
+            while (body.velocity.y <= 0.5f && timeout > 0f)
+            {
+                timeout -= Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(body.velocity.y, Is.GreaterThan(0.5f));
+            timeout = 2f;
+            while ((body.position.y > 0.05f || Mathf.Abs(body.velocity.y) > 0.2f) && timeout > 0f)
+            {
+                timeout -= Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(timeout, Is.GreaterThan(0f));
+            for (int step = 0; step < 10; step++)
+            {
+                yield return new WaitForFixedUpdate();
+                Assert.That(body.velocity.y, Is.LessThan(0.5f));
+            }
+
+            bool retried = false;
+            for (int step = 0; step < 10; step++)
+            {
+                yield return new WaitForFixedUpdate();
+                retried |= body.velocity.y > 0.5f;
+            }
+
+            Assert.That(retried, Is.True);
+        }
+
         [UnityTearDown]
         public IEnumerator TearDown()
         {
@@ -154,7 +275,7 @@ namespace Spotlight.Tests.PlayMode
             GameObject monsterObject = CreateInactiveObject("Monster");
             monsterObject.transform.position = position;
             Rigidbody2D rigidbody = monsterObject.AddComponent<Rigidbody2D>();
-            rigidbody.gravityScale = 0f;
+            rigidbody.gravityScale = 1f;
             BoxCollider2D bodyCollider = monsterObject.AddComponent<BoxCollider2D>();
             bodyCollider.size = new Vector2(0.9f, 1.5f);
 
@@ -218,7 +339,21 @@ namespace Spotlight.Tests.PlayMode
                 yield return null;
             }
 
+
             Assert.That(tree.Phase, Is.EqualTo(Demo2TreePhase.AwaitingGrowth));
+        }
+        private BoxCollider2D CreateStaticBox(
+            string name,
+            Vector2 position,
+            Vector2 size,
+            bool isTrigger)
+        {
+            GameObject box = CreateObject(name);
+            box.transform.position = position;
+            BoxCollider2D collider = box.AddComponent<BoxCollider2D>();
+            collider.size = size;
+            collider.isTrigger = isTrigger;
+            return collider;
         }
 
         private GameObject CreateObject(string name)

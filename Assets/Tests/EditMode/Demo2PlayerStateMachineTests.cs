@@ -85,5 +85,54 @@ namespace Spotlight.Tests.EditMode
             Assert.That(stateMachine.State, Is.EqualTo(Demo2PlayerState.Idle));
             Assert.That(stateMachine.CanMove, Is.True);
         }
+        [Test]
+        public void Attack1_CrossingStrikeTimeReportsExactlyOnce()
+        {
+            Demo2PlayerStateMachine stateMachine = new Demo2PlayerStateMachine();
+            stateMachine.Advance(0f, false, true);
+
+            Assert.That(
+                stateMachine.Advance(0.249f, false, false),
+                Is.EqualTo(Demo2PlayerAdvanceResult.None));
+            Assert.That(
+                stateMachine.Advance(0.001f, false, false),
+                Is.EqualTo(Demo2PlayerAdvanceResult.Attack1Strike));
+            Assert.That(
+                stateMachine.Advance(0.1f, false, false),
+                Is.EqualTo(Demo2PlayerAdvanceResult.None));
+        }
+
+        [Test]
+        public void Attack2_ReportsItsOwnStrikeExactlyOnce()
+        {
+            Demo2PlayerStateMachine stateMachine = new Demo2PlayerStateMachine();
+            stateMachine.Advance(0f, false, true);
+            stateMachine.Advance(0.25f, false, true);
+            stateMachine.Advance(AttackDuration - 0.25f, false, false);
+
+            Assert.That(stateMachine.State, Is.EqualTo(Demo2PlayerState.Attack2));
+            Assert.That(
+                stateMachine.Advance(0.3f, false, false),
+                Is.EqualTo(Demo2PlayerAdvanceResult.Attack2Strike));
+            Assert.That(
+                stateMachine.Advance(0.1f, false, false),
+                Is.EqualTo(Demo2PlayerAdvanceResult.None));
+        }
+
+        [Test]
+        public void CancelBeforeStrike_DoesNotReportDelayedStrike()
+        {
+            Demo2PlayerStateMachine stateMachine = new Demo2PlayerStateMachine();
+            stateMachine.Advance(0f, false, true);
+            stateMachine.Advance(0.2f, false, false);
+
+            stateMachine.CancelCurrentAction();
+
+            Assert.That(
+                stateMachine.Advance(0.1f, false, false),
+                Is.EqualTo(Demo2PlayerAdvanceResult.None));
+            Assert.That(stateMachine.State, Is.EqualTo(Demo2PlayerState.Idle));
+        }
+
     }
 }

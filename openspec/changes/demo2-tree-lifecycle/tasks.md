@@ -17,7 +17,7 @@
 - [x] 实现 Sprouting 与4帧 Growing 非缩放动画
 - [x] 实现水首次到中心的一次性触发器
 - [x] 创建 Square Sprite 占位树 Prefab
-- [x] 通过 Unity Editor 接入 demo2 场景中心检测点
+- [x] 通过 Unity Editor 将 demo2 场景中心检测点接入最右端上层水格
 - [x] 将水到达前状态改为可见 Dormant，并保持碰撞体关闭
 
 ## 验证
@@ -39,3 +39,5 @@
 - Sprouted Scale、Sprouted Color 和 Mature Scale 已暴露到 Inspector；水到达后才启用碰撞并播放配置目标动画。
 - `Spotlight.Game` 编译通过：0个警告、0个错误；OpenSpec严格校验通过。
 - 按用户要求未启动Unity Test Runner；等待项目负责人在Play Mode确认占位树状态表现。
+- 回归诊断确认WaterTarget曾落在 `(13,-2)` 而水道位于 `y=-1`；已将Demo2Tree Prefab的WaterTarget局部位置修正为 `(0,0,0)`。
+- 项目负责人已确认修正后水到树会触发发芽，并在同一流程启动刷怪装置。

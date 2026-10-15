@@ -15,6 +15,16 @@ namespace Spotlight.Demos.Demo2
     }
 
     /// <summary>
+    /// 玩家状态推进在当前帧产生的一次性攻击命中事实。
+    /// </summary>
+    public enum Demo2PlayerAdvanceResult
+    {
+        None = 0,
+        Attack1Strike = 1,
+        Attack2Strike = 2
+    }
+
+    /// <summary>
     /// 维护玩家移动、二段攻击、攻击间隔和受击硬直之间的合法转换。
     /// </summary>
     public sealed class Demo2PlayerStateMachine
@@ -22,11 +32,13 @@ namespace Spotlight.Demos.Demo2
         private const float AttackDuration = 31f / 60f;
         private const float AttackInterval = 0.8f;
         private const float ComboQueueStartTime = 0.25f;
+        private const float AttackStrikeTime = 0.25f;
         private const float HitStunDuration = 0.5f;
 
         private float _stateElapsedTime;
         private float _attackCooldownRemaining;
         private bool _isSecondAttackQueued;
+        private bool _hasCurrentAttackStruck;
 
         /// <summary>
         /// 当前玩家状态。
@@ -44,9 +56,9 @@ namespace Spotlight.Demos.Demo2
         public bool CanPush => CanMove;
 
         /// <summary>
-        /// 按缩放时间推进移动、攻击和受击状态。
+        /// 按缩放时间推进移动、攻击和受击状态，并返回当前帧首次发生的攻击命中事实。
         /// </summary>
-        public void Advance(float deltaTime, bool isMoving, bool attackPressed)
+        public Demo2PlayerAdvanceResult Advance(float deltaTime, bool isMoving, bool attackPressed)
         {
             if (deltaTime < 0f)
             {
@@ -58,17 +70,15 @@ namespace Spotlight.Demos.Demo2
             switch (State)
             {
                 case Demo2PlayerState.Attack1:
-                    AdvanceFirstAttack(deltaTime, isMoving, attackPressed);
-                    return;
+                    return AdvanceFirstAttack(deltaTime, isMoving, attackPressed);
                 case Demo2PlayerState.Attack2:
-                    AdvanceTimedState(deltaTime, AttackDuration, isMoving);
-                    return;
+                    return AdvanceSecondAttack(deltaTime, isMoving);
                 case Demo2PlayerState.HitStun:
                     AdvanceTimedState(deltaTime, HitStunDuration, isMoving);
-                    return;
+                    return Demo2PlayerAdvanceResult.None;
                 default:
                     AdvanceLocomotion(isMoving, attackPressed);
-                    return;
+                    return Demo2PlayerAdvanceResult.None;
             }
         }
 
@@ -109,9 +119,14 @@ namespace Spotlight.Demos.Demo2
             EnterState(isMoving ? Demo2PlayerState.Moving : Demo2PlayerState.Idle);
         }
 
-        private void AdvanceFirstAttack(float deltaTime, bool isMoving, bool attackPressed)
+        private Demo2PlayerAdvanceResult AdvanceFirstAttack(
+            float deltaTime,
+            bool isMoving,
+            bool attackPressed)
         {
-            _stateElapsedTime += deltaTime;
+            Demo2PlayerAdvanceResult result = AdvanceAttackTime(
+                deltaTime,
+                Demo2PlayerAdvanceResult.Attack1Strike);
 
             if (attackPressed && _stateElapsedTime >= ComboQueueStartTime &&
                 _stateElapsedTime < AttackDuration)
@@ -121,7 +136,7 @@ namespace Spotlight.Demos.Demo2
 
             if (_stateElapsedTime < AttackDuration)
             {
-                return;
+                return result;
             }
 
             if (_isSecondAttackQueued)
@@ -129,10 +144,42 @@ namespace Spotlight.Demos.Demo2
                 _isSecondAttackQueued = false;
                 _attackCooldownRemaining = AttackInterval;
                 EnterState(Demo2PlayerState.Attack2);
-                return;
+                return result;
             }
 
             EnterState(isMoving ? Demo2PlayerState.Moving : Demo2PlayerState.Idle);
+            return result;
+        }
+
+        private Demo2PlayerAdvanceResult AdvanceSecondAttack(float deltaTime, bool isMoving)
+        {
+            Demo2PlayerAdvanceResult result = AdvanceAttackTime(
+                deltaTime,
+                Demo2PlayerAdvanceResult.Attack2Strike);
+
+            if (_stateElapsedTime >= AttackDuration)
+            {
+                EnterState(isMoving ? Demo2PlayerState.Moving : Demo2PlayerState.Idle);
+            }
+
+            return result;
+        }
+
+        private Demo2PlayerAdvanceResult AdvanceAttackTime(
+            float deltaTime,
+            Demo2PlayerAdvanceResult strikeResult)
+        {
+            float previousElapsedTime = _stateElapsedTime;
+            _stateElapsedTime += deltaTime;
+
+            if (_hasCurrentAttackStruck || previousElapsedTime >= AttackStrikeTime ||
+                _stateElapsedTime < AttackStrikeTime)
+            {
+                return Demo2PlayerAdvanceResult.None;
+            }
+
+            _hasCurrentAttackStruck = true;
+            return strikeResult;
         }
 
         private void AdvanceTimedState(float deltaTime, float duration, bool isMoving)
@@ -153,6 +200,10 @@ namespace Spotlight.Demos.Demo2
 
             State = state;
             _stateElapsedTime = 0f;
+            if (state == Demo2PlayerState.Attack1 || state == Demo2PlayerState.Attack2)
+            {
+                _hasCurrentAttackStruck = false;
+            }
         }
     }
 }

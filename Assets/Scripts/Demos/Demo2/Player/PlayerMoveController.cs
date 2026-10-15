@@ -46,6 +46,9 @@ namespace Spotlight.Demos.Demo2
         [Header("运行状态")]
         [SerializeField] private Demo2SimulationController _simulationController;
 
+        [Header("攻击判定")]
+        [SerializeField] private Demo2PlayerMeleeAttack _meleeAttack;
+
         private static readonly int StateParameter = Animator.StringToHash("State");
         private static readonly int IdleState = Animator.StringToHash("Base Layer.PlayerIdle");
         private static readonly int MovingState = Animator.StringToHash("Base Layer.PlayerRun");
@@ -97,9 +100,11 @@ namespace Spotlight.Demos.Demo2
             _input = new GameInputActions();
             _playerStateMachine = new Demo2PlayerStateMachine();
 
-            if (_rigidbody == null || _animator == null || _groundCheck == null)
+            if (_rigidbody == null || _animator == null || _groundCheck == null || _meleeAttack == null)
             {
-                Debug.LogError("PlayerMoveController 缺少 Rigidbody2D、Animator 或 GroundCheck 引用。", this);
+                Debug.LogError(
+                    "PlayerMoveController 缺少 Rigidbody2D、Animator、GroundCheck 或近战组件引用。",
+                    this);
                 enabled = false;
                 return;
             }
@@ -154,8 +159,13 @@ namespace Spotlight.Demos.Demo2
                 SetFacingDirection(moveInput.x > 0f);
             }
 
-            _playerStateMachine.Advance(Time.deltaTime, isMoving, attackPressed);
+            Demo2PlayerAdvanceResult advanceResult =
+                _playerStateMachine.Advance(Time.deltaTime, isMoving, attackPressed);
             ApplyAnimatorState();
+            if (advanceResult != Demo2PlayerAdvanceResult.None)
+            {
+                _meleeAttack.ResolveStrike();
+            }
 
             if (!_playerStateMachine.CanMove)
             {

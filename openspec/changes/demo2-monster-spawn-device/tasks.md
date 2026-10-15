@@ -29,11 +29,11 @@
 - [x] 5.2 增加阻挡等待、运行时注入、死亡计数和完成一次性测试
 - [x] 5.3 编译生产、EditMode和PlayMode程序集
 - [ ] 5.4 执行刷怪装置目标测试并记录实际结果
-- [ ] 5.5 项目负责人在Demo2 SideView放置装置并完成实际刷怪烟测
+- [x] 5.5 项目负责人在Demo2 SideView放置装置并完成实际刷怪烟测
 
 ## 当前验证记录
 
 - `Spotlight.Game`、`Spotlight.Tests.EditMode` 和 `Spotlight.Tests.PlayMode` 编译通过：0个警告、0个错误。
 - 已增加树启动事实、首只立即、独立装置、冻结暂停、阻挡等待、运行时注入和完成一次性测试，但按用户此前要求暂未执行。
 - `MonsterSpawnDevice.prefab` 已连接SlimeMonster、SpawnPoint、SpawnedMonsters、默认8只、2秒、Default阻挡层和0.9×1.5生成区域。
-- 正式场景未放置或引用刷怪装置；Editor场景烟测未完成。
+- 项目负责人已在Demo2 SideView完成装置放置、接线与实际刷怪烟测；场景运行成功。
