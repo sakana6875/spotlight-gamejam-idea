@@ -2,8 +2,8 @@
     "name": "Spotlight.Features.DemoOne",
     "rootNamespace": "Spotlight.Features.DemoOne",
     "references": [
-        "Spotlight.Domain",
-        "Spotlight.Contracts"
+        "Spotlight.Contracts",
+        "Spotlight.Application"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
