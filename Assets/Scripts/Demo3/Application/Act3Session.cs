@@ -24,7 +24,6 @@ namespace Healing.Demo3.Application
         public float RunSpeed = 3.4f;           // 比第二幕 2.2 快
         public float JumpPlanarSpeed = 6.5f;
         public float FaintDelay = 8f;           // 在无视人群中迷失所需时间
-        public string TrailAreaId = "sand";
 
         public Act3Stage Stage { get; private set; } = Act3Stage.WalkBack;
         public ActWalkSession Player { get; }
@@ -45,7 +44,6 @@ namespace Healing.Demo3.Application
         {
             this.bus = bus; this.flow = flow; this.flags = flags;
             Player = new ActWalkSession(girlStart, RunSpeed);
-            Player.Trails = new TrailRecorder(0.7f, TrailKind.GirlFootprint) { StrengthScale = 1.2f }; // 新脚印更清晰
         }
 
         public void SetJumpZones(IEnumerable<JumpZoneData> z) { zones.Clear(); zones.AddRange(z); }
@@ -118,7 +116,6 @@ namespace Healing.Demo3.Application
         {
             if (Stage != Act3Stage.Fainting) return;
             Stage = Act3Stage.Done;
-            flags?.SaveOldMarks(TrailAreaId, new List<TrailMark>(Player.Trails.Marks));
             flow?.GoTo(Demo3SceneIds.Act4Reenact);
         }
     }

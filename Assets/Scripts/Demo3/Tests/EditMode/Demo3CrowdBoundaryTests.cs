@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Healing.Demo3.Adapters;
 using Healing.Demo3.Application;
 using Healing.Demo3.Domain;
@@ -7,7 +6,7 @@ using UnityEngine;
 
 namespace Healing.Demo3.Tests
 {
-    /// <summary>本次迭代：人群边界、男女形象分配、玩家镜头禁锢、区域名播报</summary>
+    /// <summary>本次迭代：人群边界、男女形象分配、玩家镜头禁锢</summary>
     public class CrowdBoundsAndVariantTests
     {
         private static Demo3TuningData Tuning() => new Demo3TuningData();
@@ -102,52 +101,6 @@ namespace Healing.Demo3.Tests
 
             Assert.LessOrEqual(session.PlayerPosition.x, 3f + 1e-3f);
             Assert.GreaterOrEqual(session.PlayerPosition.y, -2f - 1e-3f);
-        }
-    }
-
-    public class AreaNameAnnouncerTests
-    {
-        private static List<AreaNameZone> Zones() => new List<AreaNameZone>
-        {
-            new AreaNameZone("界水", new Rect(0f, 0f, 10f, 10f)),
-            new AreaNameZone("灵苑", new Rect(20f, 0f, 10f, 10f)),
-        };
-
-        [Test]
-        public void Enter_FiresOnce_StayingInside_DoesNotRefire()
-        {
-            var a = new AreaNameAnnouncer(Zones());
-            var fired = new List<string>();
-            a.Entered += n => fired.Add(n);
-
-            a.Tick(new Vector2(5f, 5f));
-            a.Tick(new Vector2(6f, 5f));
-            a.Tick(new Vector2(7f, 5f));
-
-            Assert.AreEqual(1, fired.Count);
-            Assert.AreEqual("界水", fired[0]);
-        }
-
-        [Test]
-        public void ExitAndReenter_FiresAgain_AndReverseEntryAlsoFires()
-        {
-            var a = new AreaNameAnnouncer(Zones());
-            var fired = new List<string>();
-            a.Entered += n => fired.Add(n);
-
-            a.Tick(new Vector2(5f, 5f));   // 进界水
-            a.Tick(new Vector2(15f, 5f));  // 离开（空白带）
-            a.Tick(new Vector2(5f, 5f));   // 反向再进界水
-            a.Tick(new Vector2(25f, 5f));  // 进灵苑
-
-            Assert.AreEqual(new[] { "界水", "界水", "灵苑" }, fired.ToArray());
-        }
-
-        [Test]
-        public void NullZones_AreTolerated()
-        {
-            var a = new AreaNameAnnouncer(null);
-            Assert.DoesNotThrow(() => a.Tick(Vector2.zero));
         }
     }
 }

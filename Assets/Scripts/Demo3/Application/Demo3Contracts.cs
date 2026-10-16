@@ -29,17 +29,14 @@ namespace Healing.Demo3.Application
 
     // ============ 跨场景运行旗标端口 ============
     /// <summary>
-    /// 本 Demo 运行期需要跨幕携带的纯数据：石碑点亮记录、旧脚印。
-    /// 只存稳定 ID 与纯数据，不存任何 Unity 对象引用。
-    /// 正式接入全局架构后，"石碑点亮"应迁移为 ProgressManager 的永久收集物，
-    /// 旧脚印归入检查点临时状态，本端口随之删除。
+    /// 本 Demo 运行期需要跨幕携带的纯数据：石碑点亮记录（影响结局判定）。
+    /// 只存稳定 ID，不存任何 Unity 对象引用。
+    /// 正式接入全局架构后，"石碑点亮"应迁移为 ProgressManager 的永久收集物，本端口随之删除。
     /// </summary>
     public interface IDemo3RunFlags
     {
         bool IsLit(string tabletId);
         void MarkLit(string tabletId);
-        IReadOnlyList<TrailMark> GetOldMarks(string areaId);
-        void SaveOldMarks(string areaId, List<TrailMark> marks);
     }
 
     // ============ Demo3 的音频端口（连续混音）============

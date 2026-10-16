@@ -1,4 +1,3 @@
-using Healing.Demo3.Domain;
 using UnityEngine;
 
 namespace Healing.Demo3.Application
@@ -13,7 +12,6 @@ namespace Healing.Demo3.Application
         public float Speed { get; set; }
         public Vector2 Position { get; protected set; }
         public Vector2 Velocity { get; private set; }
-        public TrailRecorder Trails { get; set; }   // 可为 null（无轨迹阶段）
         public Rect Bounds;                          // 静态场景边界（左右墙）
         public float DynamicFloorY = float.NegativeInfinity; // 相机下沿抬升的动态墙
         public bool ControlLocked;                   // 播片/跳跃中锁操作
@@ -34,10 +32,27 @@ namespace Healing.Demo3.Application
             Position = new Vector2(
                 Mathf.Clamp(Position.x, Bounds.xMin, Bounds.xMax),
                 Mathf.Clamp(Position.y, floor, Bounds.yMax));
-
-            Trails?.Tick(dt, Position, Velocity);
         }
 
-        public void Teleport(Vector2 pos) { Position = pos; }
+        /// <summary>
+        /// 系统接管移动：无视玩家输入，以恒定速度走向目标点（用于第二幕进蘑菇段前的自动走位）。
+        /// 返回是否已到达。
+        /// </summary>
+        public bool AutoStepTo(Vector2 target, float dt)
+        {
+            Vector2 to = target - Position;
+            float step = Speed * dt;
+            if (to.magnitude <= Mathf.Max(step, 1e-4f))
+            {
+                Position = target;
+                Velocity = Vector2.zero;
+                return true;
+            }
+            Velocity = to.normalized * Speed;
+            Position += Velocity * dt;
+            return false;
+        }
+
+        public void Teleport(Vector2 pos) { Position = pos; Velocity = Vector2.zero; }
     }
 }

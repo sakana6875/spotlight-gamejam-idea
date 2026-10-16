@@ -41,6 +41,12 @@ namespace Healing.Demo3.Data
         [Header("演出")]
         public float CollapseDelay = 2.5f;
 
+        [Header("第一幕动画时间轴（秒）")]
+        [Tooltip("此前为正常走路动画；此后为抱头走路动画")]
+        public float CoverEarsStartSeconds = 45f;
+        [Tooltip("到点女孩不能行动：抱头静止并进入收尾（若压迫值提前涨满则提前触发）")]
+        public float CollapseSeconds = 60f;
+
         public Demo3TuningData ToData()
         {
             return new Demo3TuningData
@@ -64,6 +70,8 @@ namespace Healing.Demo3.Data
                 PressureCrowdRate = PressureCrowdRate,
                 PressureCrowdReference = PressureCrowdReference,
                 CollapseDelay = CollapseDelay,
+                CoverEarsStartSeconds = CoverEarsStartSeconds,
+                CollapseSeconds = CollapseSeconds,
             };
         }
     }

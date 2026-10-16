@@ -31,7 +31,7 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private Demo3InputAdapter inputAdapter;
         [SerializeField] private Demo3AmbienceAudioAdapter ambienceAudio; // 可选，未接则静音
 
-        [Header("演示衔接（可选）：跪倒演出结束后切到第二幕")]
+        [Header("演示衔接（可选）：收尾演出结束后切到第二幕")]
         [SerializeField] private Demo3FlowCarrier flowCarrier; // 场景内引用；留空则只上报结果
 
         private IDemo3Services services;

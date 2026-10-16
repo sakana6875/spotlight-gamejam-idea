@@ -37,6 +37,10 @@ namespace Healing.Demo3.Domain
         public float PressureCrowdReference = 200f;      // 看客数量归一化参考值
 
         // ---- 演出 ----
-        public float CollapseDelay = 2.5f;      // 压迫满后到上报结果的跪倒演出时长
+        public float CollapseDelay = 2.5f;      // 不能行动后到上报结果的收尾演出时长
+
+        // ---- 第一幕动画时间轴（姿态按时间驱动，与压迫值解耦，流程时长可控）----
+        public float CoverEarsStartSeconds = 45f; // 此前正常走路动画；此后抱头走路动画
+        public float CollapseSeconds = 60f;       // 到点不能行动：抱头静止，进入收尾（压迫满值会提前触发）
     }
 }

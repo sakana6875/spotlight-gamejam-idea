@@ -27,7 +27,16 @@ namespace Healing.Demo3.Adapters
         private const string RaiseHeadState = "RaiseHead"; // 女孩抬头
         private const string StandState = "Stand";         // 女孩被拉起站直
 
-        public void Play(Action onComplete) => StartCoroutine(Routine(onComplete));
+        public void Play(Action onComplete)
+        {
+            if (boy == null || girl == null)
+            {
+                Debug.LogError("[Demo3] Act2IntroDirector 缺少 boy/girl 引用，播片跳过。", this);
+                onComplete?.Invoke();
+                return;
+            }
+            StartCoroutine(Routine(onComplete));
+        }
 
         private IEnumerator Routine(Action onComplete)
         {
@@ -53,9 +62,12 @@ namespace Healing.Demo3.Adapters
             yield return new WaitForSeconds(0.6f);
 
             // 牵手建立：男孩领队
-            handhold.SetFollower(girl.transform);
-            handhold.Snap(boy.transform.position, girl.transform.position);
-            handhold.Active = true;
+            if (handhold != null)
+            {
+                handhold.SetFollower(girl.transform);
+                handhold.Snap(boy.transform.position, girl.transform.position);
+                handhold.Active = true;
+            }
 
             // 男孩向上走一点，提示玩家向上
             Vector2 hintPos = (Vector2)boy.transform.position + Vector2.up * 1.5f;
@@ -75,7 +87,7 @@ namespace Healing.Demo3.Adapters
                 pos = Vector2.MoveTowards(pos, target, speed * Time.deltaTime);
                 Vector2 vel = (target - pos).normalized * speed;
                 w.ApplyExternal(pos, vel);
-                handhold.SetLeaderPos(pos);
+                if (handhold != null) handhold.SetLeaderPos(pos);
                 yield return null;
             }
             w.ApplyExternal(target, Vector2.zero);

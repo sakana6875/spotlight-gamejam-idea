@@ -33,6 +33,7 @@ namespace Healing.Demo3.Adapters
 
         [Header("可选：女孩专用（留空则回退到普通跑动/待机）")]
         public string kneel = "Kneel";
+        public string coverEarsIdle = "CoverEars";   // 抱头静止（第一幕结尾不能行动时）
         public string coverEarsMoveDown = "";
         public string coverEarsMoveUp = "";
         public string coverEarsMoveLeft = "";
@@ -63,7 +64,7 @@ namespace Healing.Demo3.Adapters
             Check(anim, owner, moveUp);
             Check(anim, owner, moveLeft);
             Check(anim, owner, moveRight);
-            if (needKneel) Check(anim, owner, kneel);
+            if (needKneel) { Check(anim, owner, kneel); Check(anim, owner, coverEarsIdle); } // 女孩专属
             Check(anim, owner, coverEarsMoveDown);
             Check(anim, owner, coverEarsMoveUp);
             Check(anim, owner, coverEarsMoveLeft);
@@ -105,6 +106,7 @@ namespace Healing.Demo3.Adapters
 
             string s = kneeling && !string.IsNullOrEmpty(kneel) ? kneel
                      : moving ? MoveName(facing, coverEars)
+                     : coverEars && !string.IsNullOrEmpty(coverEarsIdle) ? coverEarsIdle // 抱头且不动 → 抱头静止
                      : idle;
             if (string.IsNullOrEmpty(s) || s == current) return;
 

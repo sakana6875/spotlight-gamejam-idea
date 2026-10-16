@@ -1,16 +1,17 @@
-using System;
 using System.Collections.Generic;
 using Healing.Demo3.Domain;
 using UnityEngine;
 
 namespace Healing.Demo3.Application
 {
-    public enum Act2Segment { Intro = 0, WalkUp = 1, Mushrooms = 2, ToTree = 3, Done = 4 }
+    public enum Act2Segment { Intro = 0, WalkUp = 1, Approach = 2, Mushrooms = 3, ToTree = 4, Done = 5 }
 
     /// <summary>
     /// 第二幕「拯救」用例编排（应用层纯逻辑）。
-    /// 段落：Intro（救援播片）→ WalkUp（黑夜上行，男孩牵女孩， trails 分两段）→
-    ///       Mushrooms（蘑菇跳台 + 女孩引导）→ ToTree（女孩牵男孩到树下睡去）→ Done。
+    /// 段落：Intro（救援播片）→ WalkUp（黑夜上行，男孩牵女孩）→
+    ///       Approach（走进接管区[蓝框]：系统接管，自动走入集结点[黄点]，玩家输入无效）→
+    ///       Mushrooms（女孩松手跳台引导；玩家无法移动，只能站进跳跃圈按空格逐台跳）→
+    ///       ToTree（女孩牵男孩到树下睡去）→ Done。
     /// 速度恒定、响应正常（区别于第一幕）。玩家=男孩，第三段切换为操控女孩。
     /// </summary>
     public sealed class Act2Session
@@ -24,21 +25,17 @@ namespace Healing.Demo3.Application
         public float GirlLeadSpeed = 2.2f;
         public float JumpPlanarSpeed = 6f;
         public float JumpApexVisual = 1.2f;     // 视觉腾空高度（适配层换算）
-        public float TrailStartY = 20f;         // 超过此高度进入"浅水沙地"段，开始留轨迹
-        public float MushroomEntryY = 60f;      // 到达蘑菇段入口
+        public Rect MushroomEntryZone = new Rect(-6f, 58f, 12f, 6f); // 接管区（蓝框）：走入即被系统接管
+        public Vector2 MushroomGatherPoint = new Vector2(0f, 62f);   // 集结点（黄点）：自动走位目标
         public float TreeY = 150f;              // 第三段终点：大树位置（绝对 Y 坐标，须高于蘑菇段出口）
-        public string TrailAreaId = "sand";
 
         public Act2Segment Segment { get; private set; } = Act2Segment.Intro;
 
-        /// <summary>当前被操控的角色（WalkUp/Mushrooms=男孩，ToTree=女孩）</summary>
+        /// <summary>当前被操控的角色（WalkUp/Approach/Mushrooms=男孩，ToTree=女孩）</summary>
         public ActWalkSession Player { get; private set; }
         /// <summary>被牵手跟随者的世界坐标由适配层 HandholdFollower 平滑跟随</summary>
         public bool GirlIsLeader { get; private set; }
         public GirlGuideAI Guide { get; private set; }
-
-        // 全程轨迹累积（跨段落，供第三幕做旧复现）
-        private readonly List<TrailMark> allMarks = new List<TrailMark>();
 
         // 玩家跳跃状态
         private readonly List<JumpZoneData> zones = new List<JumpZoneData>();
@@ -112,12 +109,20 @@ namespace Healing.Demo3.Application
                 case Act2Segment.WalkUp:
                     Player.DynamicFloorY = cameraFloorY;
                     Player.Tick(dt, move);
-                    if (Player.Position.y >= TrailStartY && Player.Trails == null)
-                        StartTrails();
-                    if (Player.Position.y >= MushroomEntryY)
+                    if (MushroomEntryZone.Contains(Player.Position))
+                    {
+                        // 走进接管区（蓝框）：系统接管，玩家输入即刻失效
+                        Segment = Act2Segment.Approach;
+                        Player.ControlLocked = true;
+                        bus.Publish(new Act2SegmentChangedEvent(Segment));
+                    }
+                    break;
+
+                case Act2Segment.Approach:
+                    // 自动走入集结点（黄点）；到达后进入蘑菇段（场景根播"女孩松手跳台"）
+                    if (Player.AutoStepTo(MushroomGatherPoint, dt))
                     {
                         Segment = Act2Segment.Mushrooms;
-                        Player.ControlLocked = true; // 先播女孩松手跳台的开场
                         bus.Publish(new Act2SegmentChangedEvent(Segment));
                     }
                     break;
@@ -134,7 +139,6 @@ namespace Healing.Demo3.Application
                     {
                         Segment = Act2Segment.Done;
                         bus.Publish(new Act2SegmentChangedEvent(Segment));
-                        SaveTrailsForAct3();
                         flow?.GoTo(Demo3SceneIds.Act3Pursue);
                     }
                     break;
@@ -158,32 +162,8 @@ namespace Healing.Demo3.Application
                 Segment = Act2Segment.ToTree;
                 GirlIsLeader = true;                  // 换女孩牵手引导
                 Player = new ActWalkSession(jumpTo, GirlLeadSpeed);
-                StartGirlFootprints();
                 bus.Publish(new Act2SegmentChangedEvent(Segment));
             }
-        }
-
-        private TrailRecorder MakeRecorder(TrailKind kind)
-        {
-            var r = new TrailRecorder(0.8f, kind);
-            r.MarkPlaced += m => allMarks.Add(m);
-            return r;
-        }
-
-        private void StartTrails()
-        {
-            // 男孩水纹（女孩的脚印记录器由场景根在同一时刻挂到跟随者身上）
-            Player.Trails = MakeRecorder(TrailKind.BoyRipple);
-        }
-
-        private void StartGirlFootprints()
-        {
-            Player.Trails = MakeRecorder(TrailKind.GirlFootprint);
-        }
-
-        private void SaveTrailsForAct3()
-        {
-            flags?.SaveOldMarks(TrailAreaId, new List<TrailMark>(allMarks));
         }
     }
 }

@@ -7,7 +7,7 @@ namespace Healing.Demo3.Adapters
     /// <summary>
     /// 蘑菇平台视图（适配层）。
     /// 踩踏：任何角色都会触发凹陷回弹；
-    /// 点亮：只有小女孩触发——花纹与顶缘一圈发白光粒子（向上飘散）。
+    /// 点亮：只有小女孩触发——花纹与顶缘发光层亮起。
     /// 可见性按身份配置：Hidden（男孩看不见未点亮的）/ Faint（女孩看见微弱轮廓）/ Lit。
     /// 纯表现组件，不决定游戏规则；踩踏事实由场景根从会话事件转发。
     /// </summary>
@@ -18,7 +18,6 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private string platformId;
         [SerializeField] private SpriteRenderer cap;          // 蘑菇顶
         [SerializeField] private SpriteRenderer patternGlow;  // 花纹发光层
-        [SerializeField] private ParticleSystem burstParticles; // 白色粒子，向上飘散
         [SerializeField] private float faintAlpha = 0.18f;    // 微弱轮廓透明度
         [SerializeField] private float squashDepth = 0.25f;   // 凹陷深度（Y 缩放）
         [SerializeField] private float squashTime = 0.35f;    // 回弹总时长
@@ -56,8 +55,7 @@ namespace Healing.Demo3.Adapters
             squashCo = StartCoroutine(SquashRoutine());
             if (!isGirl) return;          // 男孩只触发凹陷回弹
             IsLit = true;
-            SetVisibility(Visibility.Lit); // 第三幕"再踩还会亮一下并放粒子"
-            if (burstParticles != null) burstParticles.Play();
+            SetVisibility(Visibility.Lit); // 第三幕"再踩还会亮一下"
         }
 
         private IEnumerator SquashRoutine()

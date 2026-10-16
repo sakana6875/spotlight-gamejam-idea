@@ -15,6 +15,8 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private Mode mode = Mode.UpOnlyNoSides;
         [SerializeField] private Camera cam;
         [SerializeField] private float followLerp = 6f;
+        [Tooltip("勾选后本组件不再驱动相机位置（交给 Cinemachine），CameraBottomY 仍按相机实际位置计算")]
+        [SerializeField] private bool externalControl;
 
         private float fixedX;
         private float maxReachedY;
@@ -31,6 +33,7 @@ namespace Healing.Demo3.Adapters
         /// <param name="target">跟随目标（通常是玩家位置）</param>
         public void Apply(Vector2 target)
         {
+            if (externalControl) return; // 相机由 Cinemachine 驱动
             Vector3 p = cam.transform.position;
             if (mode == Mode.Free)
             {

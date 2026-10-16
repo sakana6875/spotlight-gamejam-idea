@@ -450,10 +450,11 @@ MonoBehaviour:
     moveLeft: MoveLeft
     moveRight: MoveRight
     kneel: Kneel
-    coverEarsMoveDown: 
-    coverEarsMoveUp: 
-    coverEarsMoveLeft: 
-    coverEarsMoveRight: 
+    coverEarsIdle: CoverEars
+    coverEarsMoveDown: CoverEarsMoveDown
+    coverEarsMoveUp: CoverEarsMoveUp
+    coverEarsMoveLeft: CoverEarsMoveLeft
+    coverEarsMoveRight: CoverEarsMoveRight
     crossFadeSeconds: 0.08
 --- !u!50 &356713222
 Rigidbody2D:
@@ -761,7 +762,7 @@ MonoBehaviour:
   priority: 0
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: a062df9feb1eba645aa5f2c748e037d3, type: 2}
+  sharedProfile: {fileID: 11400000, guid: 220a4b0655133684c8405a26c44311b1, type: 2}
 --- !u!4 &1707089597
 Transform:
   m_ObjectHideFlags: 0

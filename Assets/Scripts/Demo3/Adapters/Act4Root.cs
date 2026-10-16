@@ -18,7 +18,6 @@ namespace Healing.Demo3.Adapters
 
         [Header("场景")]
         [SerializeField] private ActCameraRig cameraRig;
-        [SerializeField] private TrailViewAdapter trailView;
         [SerializeField] private Rect walkBounds = new Rect(-6f, -200f, 12f, 210f);
         [SerializeField] private Rect treeZone;                    // 大树触发区
         [SerializeField] private Transform treePosition;           // 引导粒子的目标方向
@@ -31,21 +30,9 @@ namespace Healing.Demo3.Adapters
         [Header("引导粒子与结局")]
         [SerializeField] private GuideParticleDirector guideParticles;
         [SerializeField] private EndingDirector endingDirector;
-        [SerializeField] private List<Rect> particleEmitZones = new List<Rect>(); // 各区域激发范围
-
-        [Header("区域名称显示（看客区域不显示；矩形按实际场景坐标微调）")]
-        [SerializeField] private AreaNameBannerView areaNameBanner;
-        [SerializeField] private List<AreaNameZone> areaZones = new List<AreaNameZone>
-        {
-            new AreaNameZone("界水",     new Rect(-8f, -180f, 16f, 60f)),
-            new AreaNameZone("深根灵域", new Rect(-8f, -120f, 16f, 60f)),
-            new AreaNameZone("潜苑",     new Rect(-8f, -20f, 16f, 30f)),    // 第二次回来：潜苑
-            new AreaNameZone("无潮之岸", new Rect(10f, -100f, 24f, 30f)),   // 隐藏 L2
-        };
 
         private IDemo3Services services;
         private Act4Session session;
-        private AreaNameAnnouncer areaAnnouncer;
 
         public override void Configure(IDemo3Services s)
         {
@@ -74,8 +61,6 @@ namespace Healing.Demo3.Adapters
             session.Player.Bounds = walkBounds;
 
             girl.Bind(session.Player.Position);
-            if (session.Player.Trails != null)
-                session.Player.Trails.MarkPlaced += OnFootprint;
 
             // 第四幕：之前点亮的蘑菇仍亮着；未点亮的保持微弱轮廓（女孩视角）
             foreach (var m in mushrooms)
@@ -83,29 +68,16 @@ namespace Healing.Demo3.Adapters
                                         : MushroomPlatformView.Visibility.Faint);
 
             services.Input.JumpPressed += OnJumpPressed;
-
-            if (areaNameBanner != null && areaZones.Count > 0)
-            {
-                areaAnnouncer = new AreaNameAnnouncer(areaZones);
-                areaAnnouncer.Entered += areaNameBanner.Show;
-            }
         }
 
         private void OnJumpPressed() => session?.TryBeginJump();
-
-        // 沙地脚印激发粒子（需求：每走一步都有粒子向上飞）
-        private void OnFootprint(TrailMark m)
-        {
-            if (guideParticles != null && treePosition != null)
-                guideParticles.Burst(m.Pos, (treePosition.position - (Vector3)m.Pos).normalized, 3);
-        }
 
         private void OnGirlLanded(JumpLandedEvent e)
         {
             if (!e.IsGirl) return;
             foreach (var m in mushrooms)
                 if (((Vector2)m.transform.position - e.Pos).sqrMagnitude <= 4f)
-                    m.OnLanded(isGirl: true); // 再踩仍会亮一下并放粒子
+                    m.OnLanded(isGirl: true); // 再踩仍会亮一下
         }
 
         private void OnEndingDecided(EndingDecidedEvent e)
@@ -139,7 +111,6 @@ namespace Healing.Demo3.Adapters
             }
 
             cameraRig.Apply(session.Player.Position);
-            areaAnnouncer?.Tick(session.Player.Position);
         }
 
         private Vector2 AmbientEmitPos()

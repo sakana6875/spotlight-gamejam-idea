@@ -41,7 +41,6 @@ namespace Healing.Demo3.Application
         {
             this.bus = bus; this.flags = flags; this.run = run;
             Player = new ActWalkSession(girlStart, WalkSpeed);
-            Player.Trails = new TrailRecorder(0.7f, TrailKind.GirlFootprint);
         }
 
         public void SetJumpZones(IEnumerable<JumpZoneData> z) { zones.Clear(); zones.AddRange(z); }

@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using Healing.Demo3.Application;
-using Healing.Demo3.Domain;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -9,7 +8,7 @@ namespace Healing.Demo3.Adapters
 {
     /// <summary>
     /// 跨场景服务载体（临时组合根，演示用）。
-    /// 职责：携带纯数据运行旗标（石碑点亮/旧脚印）、包装 SceneManager 做场景切换、
+    /// 职责：携带纯数据运行旗标（石碑点亮记录）、包装 SceneManager 做场景切换、
     ///       持有输入适配器，场景加载完成后找到该幕的场景根并注入服务。
     /// 它是全局架构里 SessionRoot + SceneFlowManager 的临时替身：
     /// 正式接入后删除本类，由 SessionRoot 注入同等接口。
@@ -23,7 +22,6 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private Demo3InputAdapter inputAdapter; // 挂在同一载体物体上
 
         private readonly HashSet<string> litTablets = new HashSet<string>();
-        private readonly Dictionary<string, List<TrailMark>> oldMarks = new Dictionary<string, List<TrailMark>>();
 
         private Demo3LocalServices services;
 
@@ -78,9 +76,6 @@ namespace Healing.Demo3.Adapters
 
         public bool IsLit(string tabletId) => litTablets.Contains(tabletId);
         public void MarkLit(string tabletId) => litTablets.Add(tabletId);
-        public IReadOnlyList<TrailMark> GetOldMarks(string areaId)
-            => oldMarks.TryGetValue(areaId, out var m) ? m : (IReadOnlyList<TrailMark>)System.Array.Empty<TrailMark>();
-        public void SaveOldMarks(string areaId, List<TrailMark> marks) => oldMarks[areaId] = marks;
 
         private void OnDestroy()
         {

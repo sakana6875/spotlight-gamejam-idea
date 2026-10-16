@@ -63,7 +63,13 @@ namespace Healing.Demo3.Application
             if (Stage == Demo3Stage.Gathering)
             {
                 pressure.Tick(dt, Sim.Count);
-                Gait = GaitCurve.Evaluate(pressure.Value);
+
+                // 速度/迟钝仍随压迫值变化；姿态按时间轴驱动（流程时长可控）：
+                // 前 CoverEarsStartSeconds 秒正常走路，之后抱头走路
+                var g = GaitCurve.Evaluate(pressure.Value);
+                var posture = pressure.Elapsed < t.CoverEarsStartSeconds
+                    ? Demo3Posture.Normal : Demo3Posture.CoverEars;
+                Gait = new GaitFrame(g.SpeedMultiplier, g.ResponseSeconds, posture);
 
                 // —— 操作迟钝的实现 ——
                 // 对输入向量做一阶低通：时间常数 ResponseSeconds 随压迫值增大，
@@ -86,7 +92,7 @@ namespace Healing.Demo3.Application
 
                 PublishFactsThrottled(dt);
 
-                if (pressure.Value >= 0.999f) BeginCollapse();
+                if (pressure.Value >= 0.999f || pressure.Elapsed >= t.CollapseSeconds) BeginCollapse();
             }
             else // Collapsing：玩家已无法移动，人群继续缓慢收缩
             {
@@ -119,8 +125,11 @@ namespace Healing.Demo3.Application
         private void BeginCollapse()
         {
             Stage = Demo3Stage.Collapsing;
-            Gait = GaitCurve.Evaluate(1f);
+            // 最终姿态：抱头静止（不能行动）。速度归零由 Collapsing 分支保证。
+            Gait = new GaitFrame(0f, 0.65f, Demo3Posture.CoverEars);
+            lastPosture = Demo3Posture.CoverEars;
             collapseTimer = t.CollapseDelay;
+            bus.Publish(new Demo3PostureChangedEvent(Demo3Posture.CoverEars));
             bus.Publish(new Demo3StageChangedEvent(Demo3Stage.Collapsing));
         }
 
@@ -162,8 +171,10 @@ namespace Healing.Demo3.Application
             pressure.Restore(s.Elapsed, s.Pressure);
             PlayerPosition = new Vector2(s.PlayerX, s.PlayerY);
             smoothedMove = Vector2.zero;
-            Gait = GaitCurve.Evaluate(pressure.Value);
-            lastPosture = Gait.Posture;
+            var g = GaitCurve.Evaluate(pressure.Value);
+            lastPosture = pressure.Elapsed < t.CoverEarsStartSeconds
+                ? Demo3Posture.Normal : Demo3Posture.CoverEars;
+            Gait = new GaitFrame(g.SpeedMultiplier, g.ResponseSeconds, lastPosture);
             Sim.RestoreCrowd(s.CrowdCount, PlayerPosition, viewMin, viewMax);
             bus.Publish(new Demo3PressureChangedEvent(pressure.Value));
             bus.Publish(new Demo3PostureChangedEvent(lastPosture));
