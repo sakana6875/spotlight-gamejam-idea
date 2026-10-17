@@ -1,5 +1,5 @@
 using NUnit.Framework;
-using Spotlight.Features.DemoOne.Domain;
+using Spotlight.Demos.Demo1.Domain;
 
 namespace Spotlight.Tests.EditMode
 {

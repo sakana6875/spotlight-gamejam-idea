@@ -1,6 +1,6 @@
 using NUnit.Framework;
-using Spotlight.Features.DemoOne.Domain.Rhythm;
-using Spotlight.Features.DemoOne.Domain.Score;
+using Spotlight.Demos.Demo1.Domain.Rhythm;
+using Spotlight.Demos.Demo1.Domain.Score;
 
 namespace Spotlight.Tests.EditMode
 {

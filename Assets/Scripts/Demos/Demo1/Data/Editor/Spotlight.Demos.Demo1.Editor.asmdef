@@ -1,0 +1,10 @@
+{
+    "name": "Spotlight.Demos.Demo1.Editor",
+    "rootNamespace": "Spotlight.Demos.Demo1.Data.Editor",
+    "references": [
+        "Spotlight.Demos.Demo1"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

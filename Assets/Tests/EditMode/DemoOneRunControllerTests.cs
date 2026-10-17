@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Spotlight.Application.Services;
-using Spotlight.Features.DemoOne.Application;
-using Spotlight.Features.DemoOne.Domain;
-using Spotlight.Features.DemoOne.Domain.Chart;
-using Spotlight.Features.DemoOne.Domain.Rhythm;
+using Spotlight.Demos.Demo1.Domain;
+using Spotlight.Demos.Demo1.Application;
+using Spotlight.Demos.Demo1.Domain.Chart;
+using Spotlight.Demos.Demo1.Domain.Rhythm;
 
 namespace Spotlight.Tests.EditMode
 {

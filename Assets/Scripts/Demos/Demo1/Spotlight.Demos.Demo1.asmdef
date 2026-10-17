@@ -1,0 +1,20 @@
+{
+    "name": "Spotlight.Demos.Demo1",
+    "rootNamespace": "Spotlight.Demos.Demo1",
+    "references": [
+        "Spotlight.Contracts",
+        "Spotlight.Application",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "Spotlight.Domain"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

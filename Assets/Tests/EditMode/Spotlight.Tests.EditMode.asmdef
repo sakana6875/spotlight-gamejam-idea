@@ -7,7 +7,7 @@
         "Spotlight.Adapters",
         "Spotlight.Composition",
         "Spotlight.Contracts",
-        "Spotlight.Features.DemoOne",
+        "Spotlight.Demos.Demo1",       
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
