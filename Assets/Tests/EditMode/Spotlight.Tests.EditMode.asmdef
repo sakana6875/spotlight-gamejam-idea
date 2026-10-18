@@ -3,7 +3,10 @@
     "rootNamespace": "Spotlight.Tests.EditMode",
     "references": [
         "Spotlight.Domain",
-        "Spotlight.Game"
+        "Spotlight.Game",
+        "Spotlight.Demos.Demo1.Editor",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

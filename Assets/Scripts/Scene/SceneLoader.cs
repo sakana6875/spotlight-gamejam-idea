@@ -1,3 +1,5 @@
+using System;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Spotlight.Scene
@@ -7,24 +9,53 @@ namespace Spotlight.Scene
     /// </summary>
     public sealed class SceneLoader
     {
+        private readonly SceneCatalog _sceneCatalog;
+
         /// <summary>
-        /// 请求加载当前唯一可用的 SampleScene；已在该场景时返回失败。
+        /// 使用组合根提供的稳定场景映射创建加载器。
         /// </summary>
-        public bool LoadSampleScene()
+        public SceneLoader(SceneCatalog sceneCatalog)
         {
-            if (SceneManager.GetActiveScene().name == "SampleScene")
+            _sceneCatalog = sceneCatalog ?? throw new ArgumentNullException(nameof(sceneCatalog));
+        }
+
+        /// <summary>
+        /// 请求加载稳定 ID 对应的场景，并返回 Unity 是否接受该请求。
+        /// </summary>
+        public SceneLoadResult LoadScene(string sceneId)
+        {
+            if (!_sceneCatalog.TryGetSceneName(sceneId, out string sceneName))
             {
-                return false;
+                Debug.LogError("场景加载失败：未登记稳定场景 ID：" + sceneId);
+                return SceneLoadResult.UnknownSceneId;
+            }
+
+            if (SceneManager.GetActiveScene().name == sceneName)
+            {
+                return SceneLoadResult.AlreadyActive;
+            }
+
+            if (!Application.CanStreamedLevelBeLoaded(sceneName))
+            {
+                Debug.LogError("场景加载失败：场景不在 Build Settings 中：" + sceneName);
+                return SceneLoadResult.FailedToStart;
             }
 
             try
             {
-                SceneManager.LoadSceneAsync("SampleScene");
-                return true;
+                AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
+                if (operation == null)
+                {
+                    Debug.LogError("场景加载失败：Unity 未接受加载请求：" + sceneName);
+                    return SceneLoadResult.FailedToStart;
+                }
+
+                return SceneLoadResult.Started;
             }
-            catch (System.Exception)
+            catch (Exception exception)
             {
-                return false;
+                Debug.LogError("场景加载失败：" + sceneName + "；原因：" + exception.Message);
+                return SceneLoadResult.FailedToStart;
             }
         }
     }

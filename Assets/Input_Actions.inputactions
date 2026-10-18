@@ -1,0 +1,46 @@
+{
+    "version": 1,
+    "name": "Input_Actions",
+    "maps": [
+        {
+            "name": "Gameplay",
+            "id": "026afdc6-3596-47b2-884f-6f2cb29e575d",
+            "actions": [
+                {
+                    "name": "Pulse",
+                    "type": "Button",
+                    "id": "ab0f7a55-ddcb-440a-b747-734f6a9d5780",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "36818e66-2ce4-43ae-8e98-c9209aa03a8f",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pulse",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "9a6927d2-972f-4c3f-89a7-388d0a093fae",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Pulse",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

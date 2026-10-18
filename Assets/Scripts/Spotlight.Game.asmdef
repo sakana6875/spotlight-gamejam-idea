@@ -2,7 +2,9 @@
     "name": "Spotlight.Game",
     "rootNamespace": "Spotlight",
     "references": [
-        "Spotlight.Domain"
+        "Spotlight.Domain",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
