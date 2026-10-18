@@ -161,7 +161,9 @@ namespace Healing.Demo3.Application
                 // 跟随到最后一个蘑菇顶 → 进入第三段
                 Segment = Act2Segment.ToTree;
                 GirlIsLeader = true;                  // 换女孩牵手引导
-                Player = new ActWalkSession(jumpTo, GirlLeadSpeed);
+                var lead = new ActWalkSession(jumpTo, GirlLeadSpeed);
+                lead.Bounds = Player.Bounds;          // 新会话沿用同一边界（默认是近无限大，必须先拷）
+                Player = lead;
                 bus.Publish(new Act2SegmentChangedEvent(Segment));
             }
         }

@@ -28,6 +28,10 @@ namespace Healing.Demo3.Adapters
 
         private void OnEnable()
         {
+            if (moveAction == null)
+                Debug.LogError("[Demo3] Demo3InputAdapter 的 Move Action 没有拖入 InputControls 里的 Move 子动作" +
+                               "——角色将永远无法移动。注意：后三幕用的是 Demo3FlowCarrier 上拖的那个输入适配器，" +
+                               "场景里另放的 Demo3Input 物体不会被读取。", this);
             Enable(moveAction, null);
             Enable(jumpAction, _ => JumpPressed?.Invoke());
             Enable(interactAction, _ => InteractPressed?.Invoke());

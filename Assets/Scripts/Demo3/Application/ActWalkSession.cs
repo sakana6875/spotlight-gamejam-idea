@@ -12,7 +12,7 @@ namespace Healing.Demo3.Application
         public float Speed { get; set; }
         public Vector2 Position { get; protected set; }
         public Vector2 Velocity { get; private set; }
-        public Rect Bounds;                          // 静态场景边界（左右墙）
+        public Rect Bounds = new Rect(-10000f, -10000f, 20000f, 20000f); // 静态场景边界（默认近似无限大）
         public float DynamicFloorY = float.NegativeInfinity; // 相机下沿抬升的动态墙
         public bool ControlLocked;                   // 播片/跳跃中锁操作
 

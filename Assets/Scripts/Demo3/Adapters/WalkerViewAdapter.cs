@@ -34,11 +34,44 @@ namespace Healing.Demo3.Adapters
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
             rb.freezeRotation = true;
+            rb.simulated = true;                 // Simulated 被关掉时 MovePosition 完全无效（角色纹丝不动）
+            if (animator != null) animator.applyRootMotion = false; // 根运动会和 MovePosition 抢 transform
+
+            // 拖线自检：Sprite 字段必须拖"视觉子物体"，拖成根物体自己时，
+            // SetVisualLift 每帧会把根位置写回出生点——角色永远走不动、动画却正常（最难查的一种死法）。
+            if (sprite == transform)
+            {
+                Debug.LogError($"[Demo3] {name} 的 WalkerViewAdapter：Sprite 字段拖成了根物体自己！" +
+                               "应改拖视觉子物体（sprite）的 Transform——否则每帧位置都被写回出生点，" +
+                               "角色原地踏步。已自动忽略该字段（跳跃腾空偏移暂时失效），请改拖子物体。", this);
+                sprite = null;
+            }
             if (sprite != null) baseSpriteLocalPos = sprite.localPosition;
+
+            // 排他自检：根物体上不允许再挂 Animator——它会按自己控制器的默认状态每帧覆写根物体位置，
+            // 把刚体移动整个顶掉（症状：动画正常播、角色原地踏步、相机与跟随者全都不动）。
+            // 正确结构：Animator 只挂在视觉子物体 Sprite 上，根物体只有 Rigidbody2D + WalkerViewAdapter。
+            var rootAnim = GetComponent<Animator>();
+            if (rootAnim != null && rootAnim != animator)
+            {
+                Debug.LogError($"[Demo3] {name} 的根物体上挂着一个多余的 Animator（控制器 " +
+                               $"{(rootAnim.runtimeAnimatorController != null ? rootAnim.runtimeAnimatorController.name : "无")}）" +
+                               "——它每帧把根物体位置写回动画录制值，角色永远走不动！已自动禁用兜底；" +
+                               "请把它从根物体上删掉（Animator 只应留在 Sprite 子物体上）。", this);
+                rootAnim.enabled = false;
+            }
+            Debug.Log("[Demo3] WalkerViewAdapter v10.18e 已加载（跳跃动画预留位版）", this);
         }
 
         public void Bind(Vector2 startPos)
         {
+            // 两种"组件在刚体在，但角色永远不动"的静默死法，必须当场报出来：
+            if (!enabled)
+                Debug.LogError($"[Demo3] {name} 的 WalkerViewAdapter 组件被禁用了（Inspector 左侧勾勾被去掉）" +
+                               "——FixedUpdate 不会运行，角色永远无法移动。请勾回来。", this);
+            else if (!rb.simulated)
+                Debug.LogError($"[Demo3] {name} 的 Rigidbody2D 没有参与模拟（Simulated 未勾）" +
+                               "——MovePosition 对它无效，角色永远无法移动。请勾上 Simulated。", this);
             pendingPos = startPos;
             rb.position = startPos;
             if (directDrive) { states.Preflight(animator, this, needKneel: false); return; }
@@ -71,6 +104,16 @@ namespace Healing.Demo3.Adapters
             if (!external) states.ResetCache();
         }
 
+        private bool jumpAnim;  // 跳跃中：填了 States→Jump 状态名就播跳跃动画，没填回退方向动画
+
+        /// <summary>跳跃动画开关（预留）：跳跃期间由场景根置 true、落地置 false。</summary>
+        public void SetJumpAnim(bool active)
+        {
+            if (jumpAnim == active) return;
+            jumpAnim = active;
+            states.ResetCache(); // 起跳/落地都强制重选状态，避免停一拍旧动画
+        }
+
         /// <summary>每帧由场景根调用（演出接管期间整体被忽略）</summary>
         public void Apply(Vector2 pos, Vector2 vel)
         {
@@ -83,7 +126,8 @@ namespace Healing.Demo3.Adapters
 
             if (directDrive)
             {
-                states.Play(animator, this, moving, lastFacing);
+                if (!jumpAnim || !states.PlayJump(animator, this))
+                    states.Play(animator, this, moving, lastFacing);
                 return;
             }
 
@@ -109,7 +153,8 @@ namespace Healing.Demo3.Adapters
 
             if (directDrive)
             {
-                states.Play(animator, this, moving, lastFacing);
+                if (!jumpAnim || !states.PlayJump(animator, this))
+                    states.Play(animator, this, moving, lastFacing);
                 return;
             }
 
@@ -129,6 +174,10 @@ namespace Healing.Demo3.Adapters
                 sprite.localPosition = baseSpriteLocalPos + new Vector2(0f, visualLift);
         }
 
+        /// <summary>调试：刚体当前位置与兜底开关状态（供场景根打走位诊断链）</summary>
+        public Vector2 DebugRbPosition => rb != null ? rb.position : (Vector2)transform.position;
+        public bool DebugLateOverride => lateOverride;
+
         private void PushFlags()
         {
             if (animator == null) return;
@@ -139,5 +188,38 @@ namespace Healing.Demo3.Adapters
 
         // pendingPos 只会被一条路径写入：平时是场景根 Apply；演出接管后 Apply 被忽略、由 ApplyExternal 写入。
         private void FixedUpdate() => rb.MovePosition(pendingPos);
+
+        // 哨兵：身体(transform)落后刚体(rb)超过 0.5m 达 1 秒，说明 transform 被每帧覆写。
+        // 最常见凶手：动画片段里录制了 Position 曲线——Animator 每帧把 transform 写回录制值。
+        // 处理：报错指出根因，同时自动开启 LateUpdate 兜底（每帧把身体强制对齐刚体，先保证能动）。
+        private float mismatchTimer;
+        private bool lateOverride;
+
+        private void LateUpdate()
+        {
+            if (!lateOverride)
+            {
+                if (Vector2.Distance(transform.position, rb.position) > 0.5f)
+                {
+                    mismatchTimer += Time.deltaTime;
+                    if (mismatchTimer > 1f)
+                    {
+                        lateOverride = true;
+                        Debug.LogError($"[Demo3] {name} 的身体被钉在 {transform.position}，刚体却已走到 {rb.position}——" +
+                                       "transform 被每帧覆写（最大嫌疑：走路片段里录了 Position/LocalPosition 曲线，" +
+                                       "Animator 每帧把位置写回录制值）。已自动开启兜底：每帧强制身体对齐刚体，角色恢复移动；" +
+                                       "但请尽快删掉片段里的位置关键帧（位移只应作用在视觉子物体 sprite 上），" +
+                                       "并确认 Apply Root Motion 保持关闭。",
+                                       this);
+                    }
+                }
+                else mismatchTimer = 0f;
+            }
+            if (lateOverride)
+            {
+                Vector2 p = rb.position;
+                transform.position = new Vector3(p.x, p.y, transform.position.z);
+            }
+        }
     }
 }

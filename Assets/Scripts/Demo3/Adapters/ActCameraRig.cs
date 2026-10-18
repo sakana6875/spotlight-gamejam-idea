@@ -26,8 +26,25 @@ namespace Healing.Demo3.Adapters
 
         private void Start()
         {
+            if (cam == null)
+            {
+                Debug.LogError("[Demo3] ActCameraRig：Cam 没拖入——相机规则不生效，CameraBottomY 也算不出来。", this);
+                enabled = false;
+                return;
+            }
             fixedX = cam.transform.position.x;
             maxReachedY = cam.transform.position.y;
+            if (externalControl)
+            {
+                // 勾了 External Control 就是把方向盘交给 Cinemachine；相机上没 Brain 就没人开车
+                bool hasBrain = false;
+                foreach (var c in cam.GetComponents<Component>())
+                    if (c != null && c.GetType().Name == "CinemachineBrain") { hasBrain = true; break; }
+                if (!hasBrain)
+                    Debug.LogError("[Demo3] ActCameraRig 勾了 External Control（相机交给 Cinemachine），" +
+                                   "但 Main Camera 上没有 CinemachineBrain——没人驱动相机，镜头永远不会动！" +
+                                   "二选一：①给 Main Camera 加 CinemachineBrain 并配好 vcam（Follow=FollowProxy）；②把 External Control 勾掉，由本组件直接驱动相机。", this);
+            }
         }
 
         /// <param name="target">跟随目标（通常是玩家位置）</param>

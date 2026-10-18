@@ -32,6 +32,10 @@ namespace Healing.Demo3.Adapters
             if (instance != null && instance != this) { Destroy(gameObject); return; }
             instance = this;
             DontDestroyOnLoad(gameObject);
+            if (inputAdapter == null)
+                Debug.LogError("[Demo3] Demo3FlowCarrier 的 Input Adapter 字段为空" +
+                               "——把挂了 Demo3InputAdapter（且拖好 Move/Jump/Interact 动作）的物体拖进来，" +
+                               "否则进入任何一幕都无法操作。", this);
             services = new Demo3LocalServices(inputAdapter, null);
             services.Flow = this;
             services.Flags = this;

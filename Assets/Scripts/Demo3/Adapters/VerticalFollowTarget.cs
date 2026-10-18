@@ -16,7 +16,16 @@ namespace Healing.Demo3.Adapters
 
         private float fixedX;
 
-        private void Start() => fixedX = transform.position.x;
+        private void Start()
+        {
+            if (target == null)
+            {
+                Debug.LogError("[Demo3] VerticalFollowTarget：Target 没拖入（应拖男孩）——摄像机不会跟随任何人！", this);
+                enabled = false;
+                return;
+            }
+            fixedX = transform.position.x;
+        }
 
         private void LateUpdate()
         {

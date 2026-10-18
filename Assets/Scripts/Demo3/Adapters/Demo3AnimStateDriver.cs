@@ -39,6 +39,10 @@ namespace Healing.Demo3.Adapters
         public string coverEarsMoveLeft = "";
         public string coverEarsMoveRight = "";
 
+        [Header("预留：跳跃动画（男孩/女孩各自填自己的；留空则跳跃时按位移方向播移动动画）")]
+        [Tooltip("跳跃素材做好后：在控制器根层级建同名状态（如 Jump）并填到这里，跳跃全程播它；留空 = 现在的方向动画兜底")]
+        public string jump = "";
+
         [Header("切换淡入时长（秒）")]
         public float crossFadeSeconds = 0.08f;
 
@@ -59,6 +63,12 @@ namespace Healing.Demo3.Adapters
         public void Preflight(Animator anim, UnityEngine.Object owner, bool needKneel)
         {
             if (anim == null) return;
+            if (anim.runtimeAnimatorController == null)
+            {
+                Debug.LogError($"[Demo3] {owner.name} 的 Animator 没有分配 Controller（Animator 组件的 Controller 字段为 None）" +
+                               "——所有状态都读不到，动画不会播放。请把建好的 Animator Controller 资产拖进去。", owner);
+                return;
+            }
             Check(anim, owner, idle);
             Check(anim, owner, moveDown);
             Check(anim, owner, moveUp);
@@ -69,15 +79,60 @@ namespace Healing.Demo3.Adapters
             Check(anim, owner, coverEarsMoveUp);
             Check(anim, owner, coverEarsMoveLeft);
             Check(anim, owner, coverEarsMoveRight);
+            Check(anim, owner, jump);   // 预留：填了才检查
+        }
+
+        /// <summary>
+        /// 预留：跳跃动画。填了 jump 状态名且控制器里存在 → 全程播它并返回 true；
+        /// 否则返回 false，调用方回退到"按位移方向播移动动画"。
+        /// </summary>
+        public bool PlayJump(Animator anim, UnityEngine.Object owner)
+        {
+            if (anim == null || string.IsNullOrEmpty(jump)) return false;
+            if (jump == current) return true;
+            int hash = Animator.StringToHash(jump);
+            if (!anim.HasState(0, hash))
+            {
+                if (warned.Add(WarnKey(anim, jump)))
+                    Debug.LogWarning($"[Demo3] {owner.name} 的 Animator 找不到跳跃状态 \"{jump}\"。" +
+                                     $"{ExistingStates(anim)}状态须在 Base Layer 根层级、名字逐字一致。" +
+                                     "（此警告每个缺失状态只报一次）", owner);
+                return false;
+            }
+            anim.CrossFade(hash, crossFadeSeconds);
+            current = jump;
+            return true;
         }
 
         private void Check(Animator anim, UnityEngine.Object owner, string s)
         {
             if (string.IsNullOrEmpty(s)) return;
             if (!anim.HasState(0, Animator.StringToHash(s)) && warned.Add(WarnKey(anim, s)))
-                Debug.LogWarning($"[Demo3] {owner.name} 的 Animator 找不到状态 \"{s}\"。" +
-                                 "直驱模式请在控制器里建同名状态（不需要拉转换线）。" +
+                Debug.LogWarning($"[Demo3] {owner.name} 的 Animator（控制器 \"{anim.runtimeAnimatorController.name}\"）" +
+                                 $"里找不到状态 \"{s}\"。{ExistingStates(anim)}" +
+                                 "对照两边逐字改齐（区分大小写、首尾无空格）：要么改组件 States 折叠栏里的名字，" +
+                                 "要么改控制器里的状态名；状态若在子状态机里，把它拖到 Base Layer 根层级。" +
                                  "（此警告每个缺失状态只报一次）", owner);
+        }
+
+        /// <summary>列出控制器 Base Layer 根层级现有的状态名（编辑器专用，帮助对齐名字）。</summary>
+        private static string ExistingStates(Animator anim)
+        {
+#if UNITY_EDITOR
+            if (anim.runtimeAnimatorController is UnityEditor.Animations.AnimatorController ctrl
+                && ctrl.layers.Length > 0)
+            {
+                var sm = ctrl.layers[0].stateMachine;
+                var sb = new System.Text.StringBuilder("该控制器根层级现有：");
+                foreach (var cs in sm.states) sb.Append('「').Append(cs.state.name).Append("」 ");
+                foreach (var sub in sm.stateMachines)
+                    sb.Append("[子状态机:").Append(sub.stateMachine.name).Append("] ");
+                return sb.ToString();
+            }
+            return "（控制器是 OverrideController 或读不到内容，无法列出状态名）";
+#else
+            return "";
+#endif
         }
 
         /// <summary>
@@ -92,7 +147,8 @@ namespace Healing.Demo3.Adapters
             {
                 if (warned.Add(WarnKey(anim, stateName)))
                     Debug.LogWarning($"[Demo3] {owner.name} 的 Animator 找不到演出状态 \"{stateName}\"。" +
-                                     "请在控制器里建同名状态（不需要拉转换线）。（此警告每个缺失状态只报一次）", owner);
+                                     "（状态须在 Base Layer 根层级、名字逐字一致；详见启动时的预检警告）" +
+                                     "（此警告每个缺失状态只报一次）", owner);
                 return;
             }
             anim.CrossFade(hash, crossFadeSeconds);
@@ -115,7 +171,7 @@ namespace Healing.Demo3.Adapters
             {
                 if (warned.Add(WarnKey(anim, s)))
                     Debug.LogWarning($"[Demo3] {owner.name} 的 Animator 找不到状态 \"{s}\"。" +
-                                     "直驱模式请在控制器里建同名状态（不需要拉转换线）。" +
+                                     "（状态须在 Base Layer 根层级、名字逐字一致；详见启动时的预检警告）" +
                                      "（此警告每个缺失状态只报一次）", owner);
                 return;
             }

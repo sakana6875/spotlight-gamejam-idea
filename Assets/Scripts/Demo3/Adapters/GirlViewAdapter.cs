@@ -31,6 +31,8 @@ namespace Healing.Demo3.Adapters
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.interpolation = RigidbodyInterpolation2D.Interpolate;
             rb.freezeRotation = true;
+            rb.simulated = true;                 // Simulated 被关掉时 MovePosition 完全无效
+            if (animator != null) animator.applyRootMotion = false; // 根运动会和 MovePosition 抢 transform
         }
 
         public void Bind(Demo3Session s)
