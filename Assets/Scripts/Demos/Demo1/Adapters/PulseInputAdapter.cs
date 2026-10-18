@@ -1,43 +1,41 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Spotlight.Contracts;
+using Spotlight.Demos.Demo1.Application;
 
 namespace Spotlight.Demos.Demo1.Adapters
 {
     /// <summary>
-    /// ¶ÁÈ¡Íæ¼Ò Pulse ¶¯×÷µÄÊÊÅäÆ÷¡£
-    /// Í¨¹ı InputActionReference °ó¶¨µ½¾ßÌåµÄ°´¼ü£¨ÀıÈç Space£©£¬
-    /// Íæ·¨²ã²»¸ĞÖª¾ßÌå¼üÎ»¡£
+    /// å°†ç»Ÿä¸€ Input System çš„ Pulse åŠ¨ä½œè½¬æ¢ä¸ºå½“å‰å¸§è¾“å…¥çŠ¶æ€ã€‚
     /// </summary>
     public sealed class PulseInputAdapter : MonoBehaviour, IInputPulseReader
     {
-        [SerializeField] private InputActionReference _pulseAction;
+        private const string PulseActionPath = "Gameplay/Pulse";
 
-        public bool PulsePressed
-        {
-            get
-            {
-                if (_pulseAction == null || _pulseAction.action == null)
-                {
-                    return false;
-                }
-                return _pulseAction.action.WasPerformedThisFrame();
-            }
-        }
+        [SerializeField] private InputActionAsset _inputActions;
+
+        private InputAction _pulseAction;
+
+        /// <inheritdoc />
+        public bool PulsePressed => _pulseAction != null && _pulseAction.WasPerformedThisFrame();
 
         private void OnEnable()
         {
-            if (_pulseAction != null && _pulseAction.action != null)
+            if (_inputActions == null)
             {
-                _pulseAction.action.Enable();
+                Debug.LogError("Demo1 Pulse è¾“å…¥ç¼ºå°‘ç»Ÿä¸€ Input Actions èµ„äº§ã€‚", this);
+                return;
             }
+
+            _pulseAction = _inputActions.FindAction(PulseActionPath, true);
+            _pulseAction.Enable();
         }
 
         private void OnDisable()
         {
-            if (_pulseAction != null && _pulseAction.action != null)
+            if (_pulseAction != null)
             {
-                _pulseAction.action.Disable();
+                _pulseAction.Disable();
+                _pulseAction = null;
             }
         }
     }

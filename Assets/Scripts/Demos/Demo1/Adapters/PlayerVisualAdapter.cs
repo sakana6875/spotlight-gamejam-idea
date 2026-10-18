@@ -1,18 +1,19 @@
 using System.Collections;
 using UnityEngine;
-using Spotlight.Application.Services;
 using Spotlight.Demos.Demo1.Application;
 using Spotlight.Demos.Demo1.Domain.Rhythm;
 
 namespace Spotlight.Demos.Demo1.Adapters
 {
     /// <summary>
-    /// ÈªË®ÊÓ¾õ±íÏÖ¡£¶©ÔÄ NoteJudgedEvent£¬¸ù¾İÅĞ¶¨½á¹ûÇı¶¯·½¿éÒÆ¶¯¡¢±äÉ«ºÍÁ£×Ó¡£
-    /// Ã¿´ÎÅĞ¶¨´¥·¢Ò»¶Î¶Ì¶¯»­£ºPerfect Ö±ÉÏ£¬Good ×óÕÛÔÙÉÏ£¬Miss ÓÒÕÛÔÙÉÏ¡£
-    /// ¶¯»­Ê±³¤²»Ó°ÏìÅĞ¶¨£¬ÅĞ¶¨ÍêÈ«ÓÉ Controller µÄÊ±¼äÖáÇı¶¯¡£
+    /// æ ¹æ®åˆ¤å®šäº‹å®æ’­æ”¾æ³‰æ°´ä½ç§»ã€é¢œè‰²å’Œç²’å­åé¦ˆï¼Œä¸å‚ä¸åˆ¤å®šè®¡ç®—ã€‚
     /// </summary>
     public sealed class PlayerVisualAdapter : MonoBehaviour
     {
+        private static readonly Color PerfectColor = new Color(1f, 1f, 0.85f);
+        private static readonly Color GoodColor = new Color(0.55f, 0.85f, 1f);
+        private static readonly Color MissColor = new Color(1f, 0.5f, 0.5f);
+
         [SerializeField] private Transform _springBody;
         [SerializeField] private SpriteRenderer _springRenderer;
         [SerializeField] private NoteFeedbackParticlePool _particlePool;
@@ -20,19 +21,15 @@ namespace Spotlight.Demos.Demo1.Adapters
         [SerializeField] private float _horizontalDistance = 0.3f;
         [SerializeField] private float _animationSeconds = 0.25f;
 
-        private IEventBus _eventBus;
-        private Vector3 _baseLocalPosition;
+        private Demo1EventBus _eventBus;
         private Coroutine _currentAnimation;
 
-        private static readonly Color PerfectColor = new Color(1f, 1f, 0.85f);
-        private static readonly Color GoodColor = new Color(0.55f, 0.85f, 1f);
-        private static readonly Color MissColor = new Color(1f, 0.5f, 0.5f);
-
-        /// <summary>ÓÉ Installer µ÷ÓÃ£¬×¢ÈëÊÂ¼ş×ÜÏß²¢¶©ÔÄ¡£</summary>
-        public void Initialize(IEventBus eventBus)
+        /// <summary>
+        /// è®¢é˜…æœ¬å±€åˆ¤å®šäº‹å®ã€‚
+        /// </summary>
+        public void Initialize(Demo1EventBus eventBus)
         {
             _eventBus = eventBus;
-            _baseLocalPosition = _springBody.localPosition;
             _eventBus.Subscribe<NoteJudgedEvent>(OnNoteJudged);
         }
 
@@ -44,8 +41,13 @@ namespace Spotlight.Demos.Demo1.Adapters
             }
         }
 
-        private void OnNoteJudged(NoteJudgedEvent evt)
+        private void OnNoteJudged(NoteJudgedEvent eventData)
         {
+            if (_springBody == null)
+            {
+                return;
+            }
+
             if (_currentAnimation != null)
             {
                 StopCoroutine(_currentAnimation);
@@ -53,10 +55,10 @@ namespace Spotlight.Demos.Demo1.Adapters
 
             if (_particlePool != null)
             {
-                _particlePool.Play(_springBody.position, evt.Result);
+                _particlePool.Play(_springBody.position, eventData.Result);
             }
 
-            _currentAnimation = StartCoroutine(AnimateByResult(evt.Result));
+            _currentAnimation = StartCoroutine(AnimateByResult(eventData.Result));
         }
 
         private IEnumerator AnimateByResult(JudgeResult result)
@@ -70,15 +72,15 @@ namespace Spotlight.Demos.Demo1.Adapters
                     end = start + new Vector3(0f, _riseDistance, 0f);
                     break;
                 case JudgeResult.Good:
-                    // Ïò×óÕÛÒ»´Î£¬ÔÙÏòÉÏ¡£
-                    yield return AnimateSegment(start,
+                    yield return AnimateSegment(
+                        start,
                         start + new Vector3(-_horizontalDistance, 0f, 0f));
                     start = _springBody.localPosition;
                     end = start + new Vector3(0f, _riseDistance, 0f);
                     break;
                 default:
-                    // Miss£ºÏòÓÒÕÛÒ»´Î£¬ÔÙÏòÉÏ£¬ÇÒ¸ß¶ÈµÍÓÚ Perfect¡£
-                    yield return AnimateSegment(start,
+                    yield return AnimateSegment(
+                        start,
                         start + new Vector3(_horizontalDistance, 0f, 0f));
                     start = _springBody.localPosition;
                     end = start + new Vector3(0f, _riseDistance * 0.5f, 0f);
@@ -96,14 +98,15 @@ namespace Spotlight.Demos.Demo1.Adapters
 
         private IEnumerator AnimateSegment(Vector3 from, Vector3 to)
         {
-            float t = 0f;
-            while (t < _animationSeconds)
+            float elapsed = 0f;
+            while (elapsed < _animationSeconds)
             {
-                t += Time.deltaTime;
-                float k = Mathf.Clamp01(t / _animationSeconds);
-                _springBody.localPosition = Vector3.Lerp(from, to, k);
+                elapsed += Time.deltaTime;
+                float progress = Mathf.Clamp01(elapsed / _animationSeconds);
+                _springBody.localPosition = Vector3.Lerp(from, to, progress);
                 yield return null;
             }
+
             _springBody.localPosition = to;
         }
 
@@ -111,9 +114,12 @@ namespace Spotlight.Demos.Demo1.Adapters
         {
             switch (result)
             {
-                case JudgeResult.Perfect: return PerfectColor;
-                case JudgeResult.Good: return GoodColor;
-                default: return MissColor;
+                case JudgeResult.Perfect:
+                    return PerfectColor;
+                case JudgeResult.Good:
+                    return GoodColor;
+                default:
+                    return MissColor;
             }
         }
     }

@@ -2,16 +2,13 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Spotlight.Application.Services;
 using Spotlight.Demos.Demo1.Application;
 using Spotlight.Demos.Demo1.Domain.Rhythm;
 
 namespace Spotlight.Demos.Demo1.Adapters
 {
     /// <summary>
-    /// Demo1 µÄ HUD Óë½áËãÃæ°å¡£
-    /// ¶©ÔÄ NoteJudgedEvent ¸üĞÂÅĞ¶¨µ¯×Ö£»¶©ÔÄ DemoOneCompletedEvent Õ¹Ê¾½áËã¡£
-    /// ·µ»Ø°´Å¥Í¨¹ı×¢ÈëµÄ Action »Øµ÷£¬²»Ö±½ÓÒÀÀµ ISceneFlow ¾ßÌåÊµÏÖ¡£
+    /// å±•ç¤º Demo1 HUDã€åˆ¤å®šåé¦ˆå’Œç»“ç®—ï¼Œå¹¶æŠŠè¿”å›ç‚¹å‡»äº¤ç»™åœºæ™¯æµç¨‹ã€‚
     /// </summary>
     public sealed class DemoOneUIAdapter : MonoBehaviour
     {
@@ -28,25 +25,37 @@ namespace Spotlight.Demos.Demo1.Adapters
         [SerializeField] private TMP_Text _resultCountsText;
         [SerializeField] private Button _returnButton;
 
-        private IEventBus _eventBus;
+        private Demo1EventBus _eventBus;
         private DemoOneRunState _state;
-        private Action _onReturnToHub;
+        private Action _onReturn;
         private float _popupTimer;
 
-        /// <summary>ÓÉ Installer µ÷ÓÃ¡£state ÓÃÓÚ HUD Ã¿Ö¡¶Á·Ö¡£</summary>
-        public void Initialize(IEventBus eventBus, DemoOneRunState state, Action onReturnToHub)
+        /// <summary>
+        /// ç»‘å®šå•å±€äº‹å®ã€å¯è¯»çŠ¶æ€å’Œè¿”å›æ“ä½œã€‚
+        /// </summary>
+        public void Initialize(Demo1EventBus eventBus, DemoOneRunState state, Action onReturn)
         {
-            _eventBus = eventBus;
-            _state = state;
-            _onReturnToHub = onReturnToHub;
+            _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
+            _state = state ?? throw new ArgumentNullException(nameof(state));
+            _onReturn = onReturn ?? throw new ArgumentNullException(nameof(onReturn));
 
-            if (_resultPanel != null) _resultPanel.SetActive(false);
-            if (_judgmentPopupText != null) _judgmentPopupText.text = string.Empty;
-            if (_returnButton != null) _returnButton.onClick.AddListener(OnReturnClicked);
+            if (_resultPanel != null)
+            {
+                _resultPanel.SetActive(false);
+            }
+
+            if (_judgmentPopupText != null)
+            {
+                _judgmentPopupText.text = string.Empty;
+            }
+
+            if (_returnButton != null)
+            {
+                _returnButton.onClick.AddListener(OnReturnClicked);
+            }
 
             _eventBus.Subscribe<NoteJudgedEvent>(OnNoteJudged);
             _eventBus.Subscribe<DemoOneCompletedEvent>(OnCompleted);
-
             RefreshScore();
         }
 
@@ -57,6 +66,7 @@ namespace Spotlight.Demos.Demo1.Adapters
                 _eventBus.Unsubscribe<NoteJudgedEvent>(OnNoteJudged);
                 _eventBus.Unsubscribe<DemoOneCompletedEvent>(OnCompleted);
             }
+
             if (_returnButton != null)
             {
                 _returnButton.onClick.RemoveListener(OnReturnClicked);
@@ -65,8 +75,11 @@ namespace Spotlight.Demos.Demo1.Adapters
 
         private void Update()
         {
-            if (_judgmentPopupText == null) return;
-            if (_popupTimer <= 0f) return;
+            if (_judgmentPopupText == null || _popupTimer <= 0f)
+            {
+                return;
+            }
+
             _popupTimer -= Time.deltaTime;
             if (_popupTimer <= 0f)
             {
@@ -74,32 +87,48 @@ namespace Spotlight.Demos.Demo1.Adapters
             }
         }
 
-        private void OnNoteJudged(NoteJudgedEvent evt)
+        private void OnNoteJudged(NoteJudgedEvent eventData)
         {
             RefreshScore();
             if (_judgmentPopupText != null)
             {
-                _judgmentPopupText.text = LabelOf(evt.Result);
+                _judgmentPopupText.text = LabelOf(eventData.Result);
                 _popupTimer = _popupSeconds;
             }
         }
 
-        private void OnCompleted(DemoOneCompletedEvent evt)
+        private void OnCompleted(DemoOneCompletedEvent eventData)
         {
-            if (_resultPanel != null) _resultPanel.SetActive(true);
-            if (_finalHeightText != null) _finalHeightText.text = $"{evt.FinalHeight} m";
-            if (_perfectHeightText != null) _perfectHeightText.text = $"{evt.PerfectHeight} m";
-            if (_resultScoreText != null) _resultScoreText.text = $"{evt.Score} / {evt.MaxScore}";
+            if (_resultPanel != null)
+            {
+                _resultPanel.SetActive(true);
+            }
+
+            if (_finalHeightText != null)
+            {
+                _finalHeightText.text = $"{eventData.FinalHeight} m";
+            }
+
+            if (_perfectHeightText != null)
+            {
+                _perfectHeightText.text = $"{eventData.PerfectHeight} m";
+            }
+
+            if (_resultScoreText != null)
+            {
+                _resultScoreText.text = $"{eventData.Score} / {eventData.MaxScore}";
+            }
+
             if (_resultCountsText != null)
             {
                 _resultCountsText.text =
-                    $"Perfect {evt.PerfectCount}  Good {evt.GoodCount}  Miss {evt.MissCount}";
+                    $"Perfect {eventData.PerfectCount}  Good {eventData.GoodCount}  Miss {eventData.MissCount}";
             }
         }
 
         private void RefreshScore()
         {
-            if (_scoreText != null && _state != null)
+            if (_scoreText != null)
             {
                 _scoreText.text = $"{_state.Score} / {_state.MaxScore}";
             }
@@ -107,16 +136,19 @@ namespace Spotlight.Demos.Demo1.Adapters
 
         private void OnReturnClicked()
         {
-            _onReturnToHub?.Invoke();
+            _onReturn.Invoke();
         }
 
         private static string LabelOf(JudgeResult result)
         {
             switch (result)
             {
-                case JudgeResult.Perfect: return "PERFECT";
-                case JudgeResult.Good: return "GOOD";
-                default: return "MISS";
+                case JudgeResult.Perfect:
+                    return "PERFECT";
+                case JudgeResult.Good:
+                    return "GOOD";
+                default:
+                    return "MISS";
             }
         }
     }

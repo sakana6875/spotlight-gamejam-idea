@@ -1,13 +1,11 @@
 using System.Collections;
 using UnityEngine;
-using Spotlight.Application.Services;
 using Spotlight.Demos.Demo1.Application;
 
 namespace Spotlight.Demos.Demo1.Adapters
 {
     /// <summary>
-    /// ÅĞ¶¨ÏßµÄÉÁ¹â·´À¡¡£¶©ÔÄ NoteJudgedEvent£¬ÅĞ¶¨·¢ÉúÊ±¶ÌÔİÌá¸ßÁÁ¶È¡£
-    /// ²»¸Ä±äÅĞ¶¨ÏßÎ»ÖÃ£¬Ò²²»²ÎÓëÅĞ¶¨¼ÆËã¡£
+    /// åœ¨åˆ¤å®šå‘ç”ŸåçŸ­æš‚é—ªçƒåˆ¤å®šçº¿ï¼Œä¸å‚ä¸åˆ¤å®šè®¡ç®—ã€‚
     /// </summary>
     public sealed class JudgmentLineVisual : MonoBehaviour
     {
@@ -15,17 +13,21 @@ namespace Spotlight.Demos.Demo1.Adapters
         [SerializeField] private float _flashSeconds = 0.1f;
         [SerializeField] private Color _flashColor = Color.white;
 
-        private IEventBus _eventBus;
+        private Demo1EventBus _eventBus;
         private Color _baseColor;
         private Coroutine _current;
 
-        public void Initialize(IEventBus eventBus)
+        /// <summary>
+        /// è®¢é˜…æœ¬å±€åˆ¤å®šäº‹å®ã€‚
+        /// </summary>
+        public void Initialize(Demo1EventBus eventBus)
         {
             _eventBus = eventBus;
             if (_lineRenderer != null)
             {
                 _baseColor = _lineRenderer.color;
             }
+
             _eventBus.Subscribe<NoteJudgedEvent>(OnNoteJudged);
         }
 
@@ -37,10 +39,18 @@ namespace Spotlight.Demos.Demo1.Adapters
             }
         }
 
-        private void OnNoteJudged(NoteJudgedEvent evt)
+        private void OnNoteJudged(NoteJudgedEvent eventData)
         {
-            if (_lineRenderer == null) return;
-            if (_current != null) StopCoroutine(_current);
+            if (_lineRenderer == null)
+            {
+                return;
+            }
+
+            if (_current != null)
+            {
+                StopCoroutine(_current);
+            }
+
             _current = StartCoroutine(FlashRoutine());
         }
 

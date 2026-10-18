@@ -1,35 +1,40 @@
 using UnityEngine;
+using Spotlight.Demos.Demo1.Application;
 
 namespace Spotlight.Demos.Demo1.Adapters
 {
     /// <summary>
-    /// Demo1 ³¡¾°Ö÷Çı¶¯¡£Ã¿Ö¡°Ñ¸èÇúÊ±¼äºÍ Pulse ÊäÈëËÍÈë Controller¡£
-    /// ²»³ĞÔØÍæ·¨¹æÔò£¬Ò²²»Ö±½Ó²Ù×÷ UI¡¢ÒôÆµ»òÁ£×Ó¡£
+    /// æ¯å¸§æŠŠæ­Œæ›²æ—¶é—´å’Œ Pulse è¾“å…¥é€å…¥ Demo1 å•å±€æ§åˆ¶å™¨ã€‚
     /// </summary>
     public sealed class DemoOneRunnerBehaviour : MonoBehaviour
     {
-        private Application.IDemoOneRunController _controller;
+        private IDemoOneRunController _controller;
         private SongClockAdapter _clock;
-        private Contracts.IInputPulseReader _pulse;
-        private bool _initialized;
+        private IInputPulseReader _pulse;
+        private bool _isInitialized;
 
+        /// <summary>
+        /// ç»‘å®šæœ¬å±€æ§åˆ¶å™¨ã€æ­Œæ›²æ—¶é’Ÿå’Œè¾“å…¥è¯»å–å™¨ã€‚
+        /// </summary>
         public void Initialize(
-            Application.IDemoOneRunController controller,
+            IDemoOneRunController controller,
             SongClockAdapter clock,
-            Contracts.IInputPulseReader pulse)
+            IInputPulseReader pulse)
         {
             _controller = controller;
             _clock = clock;
             _pulse = pulse;
-            _initialized = true;
+            _isInitialized = true;
         }
 
         private void Update()
         {
-            if (!_initialized) return;
-            float songTime = _clock.GetSongTimeSeconds();
-            bool pulse = _pulse.PulsePressed;
-            _controller.Tick(songTime, pulse);
+            if (!_isInitialized)
+            {
+                return;
+            }
+
+            _controller.Tick(_clock.GetSongTimeSeconds(), _pulse.PulsePressed);
         }
     }
 }

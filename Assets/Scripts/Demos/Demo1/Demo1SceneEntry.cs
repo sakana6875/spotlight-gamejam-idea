@@ -1,56 +1,64 @@
 using System;
 using UnityEngine;
-using Spotlight.Domain.Save;
-using Spotlight.Application.Services.Scene;
+using Spotlight.Demos.Demo1.Application;
+using Spotlight.Scene;
 
 namespace Spotlight.Demos.Demo1
 {
+    /// <summary>
+    /// æ¥æ”¶ç»„åˆæ ¹æœåŠ¡å¹¶åˆå§‹åŒ– Demo1 åœºæ™¯å¯¹è±¡ã€‚
+    /// </summary>
     public sealed class Demo1SceneEntry : MonoBehaviour
     {
-        [Header("Local Controllers")]
         [SerializeField] private Demo1FlowController _flowController;
-        [SerializeField] private Demo1CheckpointController _checkpointController;
+        [SerializeField] private Demo1GameplayAssembler _gameplayAssembler;
+
+        private SceneLoader _sceneLoader;
+        private IMusicPlaybackService _musicPlaybackService;
 
         public bool IsInitialized { get; private set; }
-        public ISaveService SaveService { get; private set; }
-        public ISceneFlow SceneFlow { get; private set; }
 
-        public bool Initialize(ISaveService saveService, ISceneFlow sceneFlow)
+        /// <summary>
+        /// æ³¨å…¥ Demo1 å½“å‰å®é™…ä½¿ç”¨çš„åœºæ™¯å’ŒéŸ³ä¹èƒ½åŠ›ã€‚
+        /// </summary>
+        public bool Initialize(
+            SceneLoader sceneLoader,
+            IMusicPlaybackService musicPlaybackService)
         {
-            if (saveService == null)
+            if (sceneLoader == null)
             {
-                Debug.LogError("[Demo1SceneEntry] ³õÊ¼»¯Ê§°Ü£ºsaveService Îª null¡£", this);
+                Debug.LogError("Demo1 åˆå§‹åŒ–å¤±è´¥ï¼šsceneLoader ä¸º nullã€‚", this);
                 return false;
             }
 
-            if (sceneFlow == null)
+            if (musicPlaybackService == null)
             {
-                Debug.LogError("[Demo1SceneEntry] ³õÊ¼»¯Ê§°Ü£ºsceneFlow Îª null¡£", this);
+                Debug.LogError("Demo1 åˆå§‹åŒ–å¤±è´¥ï¼šmusicPlaybackService ä¸º nullã€‚", this);
                 return false;
             }
 
             if (IsInitialized)
             {
-                if (SaveService == saveService && SceneFlow == sceneFlow)
-                {
-                    return true;
-                }
-
-                Debug.LogError("[Demo1SceneEntry] ³õÊ¼»¯Ê§°Ü£º³¢ÊÔÖØ¸´×¢Èë²»Í¬µÄ·şÎñÊµÀı¡£", this);
-                return false;
+                return ReferenceEquals(_sceneLoader, sceneLoader)
+                    && ReferenceEquals(_musicPlaybackService, musicPlaybackService);
             }
 
-            if (_flowController == null || _checkpointController == null)
+            if (_flowController == null || _gameplayAssembler == null)
             {
-                Debug.LogError("[Demo1SceneEntry] ³õÊ¼»¯Ê§°Ü£º³¡¾° Hierarchy ÖĞÎ´°ó¶¨ _flowController »ò _checkpointController¡£", this);
+                Debug.LogError("Demo1 åˆå§‹åŒ–å¤±è´¥ï¼šåœºæ™¯å…¥å£ç¼ºå°‘æµç¨‹æ§åˆ¶å™¨æˆ–ç©æ³•è£…é…å™¨ã€‚", this);
                 return false;
             }
 
-            SaveService = saveService;
-            SceneFlow = sceneFlow;
+            _sceneLoader = sceneLoader;
+            _musicPlaybackService = musicPlaybackService;
+            _flowController.Initialize(_sceneLoader);
 
-            _checkpointController.Setup(SaveService);
-            _flowController.Setup(SceneFlow);
+            if (!_gameplayAssembler.Initialize(
+                    _musicPlaybackService,
+                    () => { _flowController.ReturnToSampleScene(); }))
+            {
+                return false;
+            }
 
             IsInitialized = true;
             return true;

@@ -2,15 +2,12 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using Spotlight.Demos.Demo1.Data;
 using Spotlight.Demos.Demo1.Domain.Chart;
 
 namespace Spotlight.Demos.Demo1.Data.Editor
 {
     /// <summary>
-    /// DemoOneChartAsset µÄ Inspector À©Õ¹¡£
-    /// Ìá¹©¡¸Import from JSON...¡¹°´Å¥£¬´ÓÍâ²¿ JSON Ğ£Ñé²¢µ¼ÈëÆ×Ãæ¡£
-    /// Ğ£ÑéÊ§°ÜÊ±²»¸²¸Ç×Ê²ú£¨¹æ·¶ ¡ì9£©¡£
+    /// ä»å¤–éƒ¨ JSON æ ¡éªŒå¹¶æ›´æ–° Demo1 è¿è¡Œæ—¶è°±é¢èµ„äº§ã€‚
     /// </summary>
     [CustomEditor(typeof(DemoOneChartAsset))]
     public sealed class DemoOneChartImporter : UnityEditor.Editor
@@ -18,63 +15,84 @@ namespace Spotlight.Demos.Demo1.Data.Editor
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector();
-
             EditorGUILayout.Space();
-            var asset = (DemoOneChartAsset)target;
 
-            if (GUILayout.Button("Import from JSON..."))
-            {
-                ImportFromJson(asset);
-            }
-        }
-
-        private static void ImportFromJson(DemoOneChartAsset asset)
-        {
-            string path = EditorUtility.OpenFilePanel("Ñ¡ÔñÆ×Ãæ JSON", "", "json");
-            if (string.IsNullOrEmpty(path))
+            if (!GUILayout.Button("Import from JSON..."))
             {
                 return;
+            }
+
+            string sourcePath = EditorUtility.OpenFilePanel("é€‰æ‹©è°±é¢ JSON", string.Empty, "json");
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                return;
+            }
+
+            DemoOneChartAsset chartAsset = (DemoOneChartAsset)target;
+            if (!TryImportFromJson(chartAsset, sourcePath, out string errorMessage))
+            {
+                EditorUtility.DisplayDialog("å¯¼å…¥å¤±è´¥", errorMessage, "ç¡®å®š");
+                return;
+            }
+
+            EditorUtility.DisplayDialog("å¯¼å…¥æˆåŠŸ", "è°±é¢å·²æ›´æ–°ï¼š" + sourcePath, "ç¡®å®š");
+        }
+
+        /// <summary>
+        /// æ ¡éªŒæºæ–‡ä»¶åä¸€æ¬¡æ€§æ›´æ–°ç›®æ ‡èµ„äº§ï¼›è¯»å–æˆ–æ ¡éªŒå¤±è´¥æ—¶ä¸ä¿®æ”¹ç›®æ ‡ã€‚
+        /// </summary>
+        public static bool TryImportFromJson(
+            DemoOneChartAsset chartAsset,
+            string sourcePath,
+            out string errorMessage)
+        {
+            if (chartAsset == null)
+            {
+                errorMessage = "ç›®æ ‡è°±é¢èµ„äº§ä¸èƒ½ä¸ºç©ºã€‚";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(sourcePath))
+            {
+                errorMessage = "è°±é¢æºæ–‡ä»¶è·¯å¾„ä¸èƒ½ä¸ºç©ºã€‚";
+                return false;
             }
 
             string json;
             try
             {
-                json = File.ReadAllText(path);
+                json = File.ReadAllText(sourcePath);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                EditorUtility.DisplayDialog("µ¼ÈëÊ§°Ü", $"¶ÁÈ¡ÎÄ¼şÊ§°Ü£º{ex.Message}", "È·¶¨");
-                return;
-            }
-
-            ChartParseResult result = ChartJsonParser.Parse(json);
-            if (!result.IsSuccess)
-            {
-                // Ğ£ÑéÊ§°ÜÊ±²»ĞŞ¸Ä×Ê²ú¡£
-                EditorUtility.DisplayDialog("µ¼ÈëÊ§°Ü", result.ErrorMessage, "È·¶¨");
-                return;
+                errorMessage = sourcePath + "ï¼šè¯»å–å¤±è´¥ï¼š" + exception.Message;
+                return false;
             }
 
-            ChartData domain = result.Data;
-            var entries = new NoteEntry[domain.Notes.Length];
-            for (int i = 0; i < domain.Notes.Length; i++)
+            ChartParseResult parseResult = ChartJsonParser.Parse(json);
+            if (!parseResult.IsSuccess)
             {
-                entries[i] = new NoteEntry
+                errorMessage = sourcePath + "ï¼š" + parseResult.ErrorMessage;
+                return false;
+            }
+
+            ChartData chart = parseResult.Data;
+            NoteEntry[] entries = new NoteEntry[chart.Notes.Length];
+            for (int index = 0; index < chart.Notes.Length; index++)
+            {
+                entries[index] = new NoteEntry
                 {
-                    time = domain.Notes[i].Time,
-                    index = domain.Notes[i].Index
+                    time = chart.Notes[index].Time,
+                    index = chart.Notes[index].Index
                 };
             }
 
-            Undo.RecordObject(asset, "Import DemoOne Chart");
-            asset.SetData(domain.SongId, domain.Bpm, domain.Offset, entries);
-            EditorUtility.SetDirty(asset);
+            Undo.RecordObject(chartAsset, "Import Demo1 Chart");
+            chartAsset.SetData(chart.SongId, chart.Bpm, chart.Offset, entries);
+            EditorUtility.SetDirty(chartAsset);
             AssetDatabase.SaveAssets();
-
-            EditorUtility.DisplayDialog(
-                "µ¼Èë³É¹¦",
-                $"Æ×ÃæÒÑµ¼Èë£º{domain.Notes.Length} ¸ö note¡£\n¸èÇú£º{domain.SongId}\nÀ´Ô´£º{Path.GetFileName(path)}",
-                "È·¶¨");
+            errorMessage = null;
+            return true;
         }
     }
 }

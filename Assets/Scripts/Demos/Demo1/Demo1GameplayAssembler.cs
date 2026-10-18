@@ -1,22 +1,26 @@
+using System;
 using UnityEngine;
-using Spotlight.Application.Services;
 using Spotlight.Demos.Demo1.Adapters;
 using Spotlight.Demos.Demo1.Application;
 using Spotlight.Demos.Demo1.Data;
 using Spotlight.Demos.Demo1.Domain;
+using Spotlight.Demos.Demo1.Domain.Chart;
 using Spotlight.Demos.Demo1.Domain.Rhythm;
 
 namespace Spotlight.Demos.Demo1
 {
+    /// <summary>
+    /// ä½¿ç”¨åœºæ™¯é…ç½®å’Œç»„åˆæ ¹æœåŠ¡è£…é…ä¸€å±€ Demo1ã€‚
+    /// </summary>
     public sealed class Demo1GameplayAssembler : MonoBehaviour
     {
         [Header("Data")]
         [SerializeField] private DemoOneChartAsset _chartAsset;
         [SerializeField] private JudgeWindowConfigAsset _judgeWindowConfig;
         [SerializeField] private HeightRuleConfigAsset _heightRuleConfig;
+        [SerializeField] private AudioClip _bgmClip;
 
         [Header("Adapters")]
-        [SerializeField] private DemoOneMusicSource _musicSource;
         [SerializeField] private PulseInputAdapter _pulseInput;
         [SerializeField] private DemoOneRunnerBehaviour _runner;
         [SerializeField] private PlayerVisualAdapter _playerVisual;
@@ -26,38 +30,76 @@ namespace Spotlight.Demos.Demo1
         [Header("Config")]
         [SerializeField] private float _leadInSeconds = 0.5f;
 
-        private IEventBus _localEventBus;
+        public bool IsInitialized { get; private set; }
 
-        private void Start()
+        /// <summary>
+        /// åˆ›å»ºæœ¬å±€è§„åˆ™å¯¹è±¡å¹¶ä»¥å®é™… DSP èµ·ç‚¹å¯åŠ¨æ­Œæ›²æ—¶é’Ÿã€‚
+        /// </summary>
+        public bool Initialize(IMusicPlaybackService musicPlaybackService, Action onReturn)
         {
-            if (_chartAsset == null || _judgeWindowConfig == null || _heightRuleConfig == null)
+            if (IsInitialized)
             {
-                Debug.LogError("[Demo1GameplayAssembler] È±ÉÙ Data ×Ê²úÒıÓÃ£¬ÎŞ·¨Æô¶¯Íæ·¨£¡", this);
-                return;
+                return true;
             }
 
-            // Ê¹ÓÃ Demo1 ÄÚ²¿¼«¼òÊÂ¼ş×ÜÏß£¬³¹µ×½âñî
-            _localEventBus = new Demo1LocalEventBus();
+            if (musicPlaybackService == null || onReturn == null)
+            {
+                Debug.LogError("Demo1 ç©æ³•åˆå§‹åŒ–å¤±è´¥ï¼šç¼ºå°‘éŸ³ä¹æœåŠ¡æˆ–è¿”å›æ“ä½œã€‚", this);
+                return false;
+            }
 
-            var chart = _chartAsset.ToDomain();
-            var judgeEngine = new RhythmJudgeEngine(_judgeWindowConfig.ToDomain());
-            var heightCalc = new HeightCalculator(_heightRuleConfig.ToDomain());
+            if (_chartAsset == null
+                || _judgeWindowConfig == null
+                || _heightRuleConfig == null
+                || _bgmClip == null)
+            {
+                Debug.LogError("Demo1 ç©æ³•åˆå§‹åŒ–å¤±è´¥ï¼šç¼ºå°‘è°±é¢ã€è§„åˆ™æˆ– BGM é…ç½®ã€‚", this);
+                return false;
+            }
 
-            var controller = new DemoOneRunController(chart, judgeEngine, heightCalc, _localEventBus);
+            if (_pulseInput == null
+                || _runner == null
+                || _playerVisual == null
+                || _judgmentLineVisual == null
+                || _uiAdapter == null)
+            {
+                Debug.LogError("Demo1 ç©æ³•åˆå§‹åŒ–å¤±è´¥ï¼šç¼ºå°‘åœºæ™¯é€‚é…å™¨å¼•ç”¨ã€‚", this);
+                return false;
+            }
 
-            _playerVisual.Initialize(_localEventBus);
-            _judgmentLineVisual.Initialize(_localEventBus);
-            _uiAdapter.Initialize(_localEventBus, controller.State, onReturnToHub: () => {
-                Debug.Log("[Demo1GameplayAssembler] UI µã»÷ÁË·µ»Ø Hub¡£");
-            });
+            try
+            {
+                Demo1EventBus eventBus = new Demo1EventBus();
+                ChartData chart = _chartAsset.ToDomain();
+                RhythmJudgeEngine judgeEngine = new RhythmJudgeEngine(_judgeWindowConfig.ToDomain());
+                HeightCalculator heightCalculator = new HeightCalculator(_heightRuleConfig.ToDomain());
+                DemoOneRunController controller = new DemoOneRunController(
+                    chart,
+                    judgeEngine,
+                    heightCalculator,
+                    eventBus);
 
-            double scheduleDsp = AudioSettings.dspTime + _leadInSeconds;
-            double actualStartDsp = _musicSource.PlayMusicAtDspTime(chart.SongId, scheduleDsp);
-            var clock = new SongClockAdapter(actualStartDsp);
+                _playerVisual.Initialize(eventBus);
+                _judgmentLineVisual.Initialize(eventBus);
+                _uiAdapter.Initialize(eventBus, controller.State, onReturn);
 
-            _runner.Initialize(controller, clock, _pulseInput);
+                double scheduledDspTime = AudioSettings.dspTime + _leadInSeconds;
+                double actualStartDspTime = musicPlaybackService.PlayMusicAtDspTime(
+                    _bgmClip,
+                    scheduledDspTime);
+                _runner.Initialize(
+                    controller,
+                    new SongClockAdapter(actualStartDspTime),
+                    _pulseInput);
 
-            Debug.Log("[Demo1GameplayAssembler] Demo1 Íæ·¨×é×°Íê±Ï£¬¿ªÊ¼²¥·ÅÒôÀÖ¡£");
+                IsInitialized = true;
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("Demo1 ç©æ³•åˆå§‹åŒ–å¤±è´¥ï¼š" + exception.Message, this);
+                return false;
+            }
         }
     }
 }

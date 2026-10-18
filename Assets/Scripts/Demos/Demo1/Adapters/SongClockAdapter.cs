@@ -3,9 +3,7 @@ using UnityEngine;
 namespace Spotlight.Demos.Demo1.Adapters
 {
     /// <summary>
-    /// ÒôÆµÊ±ÖÓÊÊÅäÆ÷£º°ÑÒôÀÖ¿ªÊ¼Ê±µÄ DSP Ê±¼ä¹Ì¶¨ÏÂÀ´£¬
-    /// Ã¿Ö¡Í¨¹ı GetSongTimeSeconds ¼ÆËãµ±Ç°¸èÇú²¥·ÅÊ±¼ä¡£
-    /// Ê¹ÓÃ AudioSettings.dspTime ¶ø·Ç Time.time£¬±ÜÃâÖ¡ÂÊ²¨¶¯µ¼ÖÂµÄÅĞ¶¨Æ¯ÒÆ¡£
+    /// ä½¿ç”¨å®é™…éŸ³ä¹ DSP èµ·ç‚¹è®¡ç®—å½“å‰æ­Œæ›²æ—¶é—´ã€‚
     /// </summary>
     public sealed class SongClockAdapter
     {
@@ -16,7 +14,9 @@ namespace Spotlight.Demos.Demo1.Adapters
             _startDspTime = startDspTime;
         }
 
-        /// <summary>µ±Ç°¸èÇú²¥·ÅÊ±¼ä£¨Ãë£©¡£ÒôÀÖÉĞÎ´¿ªÊ¼Ê±¿ÉÄÜÎª¸º¡£</summary>
+        /// <summary>
+        /// è·å–ç›¸å¯¹éŸ³ä¹èµ·ç‚¹çš„ç§’æ•°ï¼›å°šæœªå¼€å§‹æ—¶è¿”å›è´Ÿæ•°ã€‚
+        /// </summary>
         public float GetSongTimeSeconds()
         {
             return (float)(AudioSettings.dspTime - _startDspTime);

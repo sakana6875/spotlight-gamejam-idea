@@ -1,6 +1,5 @@
 using System;
 using UnityEngine;
-using Spotlight.Application.Services;
 using Spotlight.Demos.Demo1.Domain;
 using Spotlight.Demos.Demo1.Domain.Chart;
 using Spotlight.Demos.Demo1.Domain.Rhythm;
@@ -9,36 +8,38 @@ using Spotlight.Demos.Demo1.Domain.Score;
 namespace Spotlight.Demos.Demo1.Application
 {
     /// <summary>
-    /// Demo1 µ¥¾ÖĞ­µ÷Æ÷¡£¸ºÔğÍÆ½ø note¡¢ÅĞ¶¨¡¢ÀÛ¼ÆµÃ·Ö£¬²¢ÔÚ½áÊøÊ±·¢²¼½áËãÊÂ¼ş¡£
-    /// ²»¼Ì³Ğ MonoBehaviour£¬²»ÒÀÀµ¾ßÌå Unity ³¡¾°¶ÔÏó£»ËùÓĞÍâ²¿ÄÜÁ¦Í¨¹ı½Ó¿Ú×¢Èë¡£
+    /// æ¨è¿› Demo1 éŸ³ç¬¦ã€åˆ¤å®šã€å¾—åˆ†å’Œç»“ç®—çŠ¶æ€ã€‚
     /// </summary>
     public sealed class DemoOneRunController : IDemoOneRunController
     {
-        /// <summary>ÒôÀÖ½áÊøºóµÈ´ı¶à¾Ã²Å´¥·¢½áËã¡£¸øÍæ¼ÒÁô³öÌı¾õÓëÊÓ¾õµÄÊÕÎ²»º³å¡£</summary>
-        private const float EndBufferSeconds = 2.0f;
+        private const float EndBufferSeconds = 2f;
 
         private readonly ChartData _chart;
         private readonly RhythmJudgeEngine _judgeEngine;
         private readonly HeightCalculator _heightCalculator;
-        private readonly IEventBus _eventBus;
+        private readonly Demo1EventBus _eventBus;
         private readonly DemoOneRunState _state;
 
+        /// <summary>
+        /// ä½¿ç”¨ç¡®å®šçš„è°±é¢ã€åˆ¤å®šè§„åˆ™ã€é«˜åº¦è§„åˆ™å’Œå±€éƒ¨äº‹å®æ€»çº¿åˆ›å»ºå•å±€æ§åˆ¶å™¨ã€‚
+        /// </summary>
         public DemoOneRunController(
             ChartData chart,
             RhythmJudgeEngine judgeEngine,
             HeightCalculator heightCalculator,
-            IEventBus eventBus)
+            Demo1EventBus eventBus)
         {
             _chart = chart ?? throw new ArgumentNullException(nameof(chart));
             _judgeEngine = judgeEngine ?? throw new ArgumentNullException(nameof(judgeEngine));
             _heightCalculator = heightCalculator ?? throw new ArgumentNullException(nameof(heightCalculator));
             _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
-
             _state = new DemoOneRunState(ScoreCalculator.CalcMaxScore(chart.Notes.Length));
         }
 
+        /// <inheritdoc />
         public DemoOneRunState State => _state;
 
+        /// <inheritdoc />
         public void Tick(float songTimeSeconds, bool pulsePressed)
         {
             if (_state.IsEnded)
@@ -46,31 +47,28 @@ namespace Spotlight.Demos.Demo1.Application
                 return;
             }
 
-            // ÏÈ´¦ÀíÊäÈë£ºÒ»´Î°´¼ü×î¶àÏûºÄÒ»¸ö note¡£
-            // ÈôÊäÈëÔçÓÚ Good ´°¿Ú×ó±ß½ç£¬ÊÓÎªÎó´¥£¬ºöÂÔÇÒ²»ÏûºÄ note¡£
             if (pulsePressed && _state.CurrentNoteIndex < _chart.Notes.Length)
             {
-                var note = _chart.Notes[_state.CurrentNoteIndex];
+                NoteData note = _chart.Notes[_state.CurrentNoteIndex];
                 float delta = songTimeSeconds - note.Time;
                 if (!_judgeEngine.IsTooEarly(delta))
                 {
-                    var result = _judgeEngine.Judge(delta);
+                    JudgeResult result = _judgeEngine.Judge(delta);
                     ApplyResult(note.Index, result, songTimeSeconds);
                 }
             }
 
-            // ÔÙ´¦Àí³¬Ê±£ºÒ»´Î Tick ¿ÉÄÜÁ¬Ğø³¬Ê±¶à¸ö note£¨ÀıÈçÍæ¼Ò³¤Ê±¼ä²»°´£©¡£
             while (_state.CurrentNoteIndex < _chart.Notes.Length)
             {
-                var note = _chart.Notes[_state.CurrentNoteIndex];
+                NoteData note = _chart.Notes[_state.CurrentNoteIndex];
                 if (!_judgeEngine.IsExpired(songTimeSeconds, note.Time))
                 {
                     break;
                 }
+
                 ApplyResult(note.Index, JudgeResult.Miss, songTimeSeconds);
             }
 
-            // ½áÊøÌõ¼ş£ºËùÓĞ note ÒÑ´¦Àí£¬ÇÒÒÑÔ½¹ı×îºóÒ»¸ö note Ê±¼ä + »º³å¡£
             if (_state.CurrentNoteIndex >= _chart.Notes.Length
                 && songTimeSeconds >= _chart.LastNoteTime + EndBufferSeconds)
             {
@@ -78,12 +76,12 @@ namespace Spotlight.Demos.Demo1.Application
             }
         }
 
+        /// <inheritdoc />
         public void Restart()
         {
             _state.Reset();
         }
 
-        /// <summary>ÀÛ¼ÆÒ»´ÎÅĞ¶¨½á¹û²¢·¢²¼ NoteJudgedEvent¡£</summary>
         private void ApplyResult(int noteIndex, JudgeResult result, float songTimeSeconds)
         {
             _state.ApplyJudge(result);
@@ -91,14 +89,16 @@ namespace Spotlight.Demos.Demo1.Application
             _eventBus.Publish(new NoteJudgedEvent(noteIndex, result, songTimeSeconds));
         }
 
-        /// <summary>¼ÆËã×îÖÕ¸ß¶È¡¢±ê¼Ç½áÊø²¢·¢²¼ DemoOneCompletedEvent¡£</summary>
         private void FinishRun()
         {
             _state.MarkEnded();
 
             int finalHeight = Mathf.RoundToInt(
                 _heightCalculator.CalcFinalHeight(
-                    _state.Score, _state.MaxScore, _state.GoodCount, _state.MissCount));
+                    _state.Score,
+                    _state.MaxScore,
+                    _state.GoodCount,
+                    _state.MissCount));
             int perfectHeight = Mathf.RoundToInt(_heightCalculator.PerfectHeight);
 
             _eventBus.Publish(new DemoOneCompletedEvent(
