@@ -2,9 +2,18 @@
     "name": "Spotlight.Demos.Demo1.Editor",
     "rootNamespace": "Spotlight.Demos.Demo1.Data.Editor",
     "references": [
-        "Spotlight.Game"
+        "Spotlight.Game",
+        ""
     ],
     "includePlatforms": [
         "Editor"
-    ]
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }
