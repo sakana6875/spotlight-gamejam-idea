@@ -165,3 +165,24 @@ Editor 工具通过 `EditorSceneManager.OpenScene`、对象组件去重和 `Save
 由于 `Spotlight.Adapters` 已被 `Spotlight.Composition` 依赖，烟测入口不能放入 Adapters，否则会形成程序集循环引用。实际文件放在 `Assets/Scripts/Architecture/Composition/Smoke/SessionSmokeEntry.cs`，仍保持临时 Unity 适配器职责；它与 `SessionRoot` 同属 Composition 程序集，服务调用仍只依赖 `SessionServices` 接口。
 ***
 ***
+## Issue #7 对话与 Demo 设计
+
+稳定内容 ID 和剧情标记放在 `Spotlight.Domain.Story`，生命周期结果和端口放在 `Spotlight.Application.Services.Dialogue` 与 `Demo`；适配器只位于 `Spotlight.Adapters`。这样 Domain/Application 不依赖 Unity，Composition 仍可通过默认工厂注入具体实现。
+
+```text
+DialogueRequest(ContentId, LocksMovement)
+        ↓
+IDialogueService → DialogueResult
+        ↓
+RecordingDialogueService / UnavailableDialogueService
+
+IDemoFlow → DemoRunResult
+        ↓
+RecordingDemoFlow
+```
+
+`RecordingDialogueService` 用最小状态表达播放和移动锁定：只有有效请求能开始；跳过或完成结束播放并解除锁定；未播放操作返回 `NotPlaying`。`RecordingDemoFlow` 记录最近一次操作和参数，并只消费一次测试注入的下一个结果；默认结果为成功。它不调用场景、存档或剧情规则，因此 `BadEnding` 只保留稳定标识，不会被该端口触发。
+
+测试通过公开结果和状态验证行为，不依赖 Unity 场景对象或私有实现细节。Issue #7 仍不引入剧情导入、内容资产、正式 UI、Demo 状态机或通用关卡抽象。
+***
+

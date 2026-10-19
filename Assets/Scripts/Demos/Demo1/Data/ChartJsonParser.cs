@@ -5,20 +5,18 @@ using Spotlight.Demos.Demo1.Domain.Chart;
 namespace Spotlight.Demos.Demo1.Data
 {
     /// <summary>
-    /// ´Ó JSON ×Ö·û´®½âÎöÆ×Ãæ¡£´¿Âß¼­£¬¿ÉÔÚ EditMode ÖĞÖ±½Ó²âÊÔ¡£
-    /// Ğ£ÑéÊ§°ÜÊ±·µ»ØÊ§°Ü½á¹û£¬²»Å×Òì³£¡£
+    /// æŠŠå¤–éƒ¨ JSON è½¬æ¢ä¸ºç¨³å®šçš„ Demo1 è°±é¢æ•°æ®ã€‚
     /// </summary>
     public static class ChartJsonParser
     {
         /// <summary>
-        /// ½âÎö JSON Îª ChartData¡£Ê§°ÜÊ±·µ»Ø IsSuccess = false µÄ½á¹û£¬
-        /// µ÷ÓÃ·½Ó¦Õ¹Ê¾ ErrorMessage ²¢ÇÒ²»¸²¸ÇÒÑÓĞ×Ê²ú¡£
+        /// è§£æå¹¶æ ¡éªŒ JSONï¼›å¤±è´¥æ—¶è¿”å›åŒ…å«å­—æ®µä½ç½®çš„é”™è¯¯ï¼Œä¸äº§ç”Ÿè°±é¢æ•°æ®ã€‚
         /// </summary>
         public static ChartParseResult Parse(string json)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
-                return ChartParseResult.Failure("JSON ÄÚÈİÎª¿Õ¡£");
+                return ChartParseResult.Failure("JSON å†…å®¹ä¸èƒ½ä¸ºç©ºã€‚");
             }
 
             ChartJsonDto dto;
@@ -26,56 +24,61 @@ namespace Spotlight.Demos.Demo1.Data
             {
                 dto = JsonUtility.FromJson<ChartJsonDto>(json);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                return ChartParseResult.Failure($"JSON ½âÎöÊ§°Ü£º{ex.Message}");
+                return ChartParseResult.Failure("JSON è§£æå¤±è´¥ï¼š" + exception.Message);
             }
 
             if (dto == null)
             {
-                return ChartParseResult.Failure("JSON ½âÎö½á¹ûÎª¿Õ¡£");
+                return ChartParseResult.Failure("JSON æ ¹å¯¹è±¡ä¸èƒ½ä¸ºç©ºã€‚");
             }
+
             if (string.IsNullOrWhiteSpace(dto.songId))
             {
-                return ChartParseResult.Failure("songId ²»ÄÜÎª¿Õ¡£");
+                return ChartParseResult.Failure("songId ä¸èƒ½ä¸ºç©ºã€‚");
             }
+
             if (dto.bpm <= 0f)
             {
-                return ChartParseResult.Failure($"bpm ±ØĞë´óÓÚ 0£¬Êµ¼ÊÎª {dto.bpm}¡£");
+                return ChartParseResult.Failure("bpm å¿…é¡»å¤§äº 0ï¼Œå®é™…ä¸º " + dto.bpm + "ã€‚");
             }
+
             if (dto.notes == null || dto.notes.Length == 0)
             {
-                return ChartParseResult.Failure("notes ²»ÄÜÎª¿Õ¡£");
+                return ChartParseResult.Failure("notes ä¸èƒ½ä¸ºç©ºã€‚");
             }
 
-            var notes = new NoteData[dto.notes.Length];
-            for (int i = 0; i < dto.notes.Length; i++)
+            NoteData[] notes = new NoteData[dto.notes.Length];
+            for (int index = 0; index < dto.notes.Length; index++)
             {
-                var n = dto.notes[i];
-                if (n.time < 0f)
+                NoteJsonDto note = dto.notes[index];
+                if (note.time < 0f)
                 {
-                    return ChartParseResult.Failure($"notes[{i}].time ²»ÄÜÎª¸º¡£");
+                    return ChartParseResult.Failure("notes[" + index + "].time ä¸èƒ½ä¸ºè´Ÿæ•°ã€‚");
                 }
-                if (i > 0 && n.time < dto.notes[i - 1].time)
-                {
-                    return ChartParseResult.Failure(
-                        $"notes[{i}].time ({n.time}) ±ØĞë²»Ğ¡ÓÚ notes[{i - 1}].time ({dto.notes[i - 1].time})¡£");
-                }
-                if (n.index != i)
+
+                if (index > 0 && note.time < dto.notes[index - 1].time)
                 {
                     return ChartParseResult.Failure(
-                        $"notes[{i}].index ±ØĞëµÈÓÚ {i}£¬Êµ¼ÊÎª {n.index}¡£");
+                        "notes[" + index + "].time ä¸èƒ½æ—©äºå‰ä¸€ä¸ªéŸ³ç¬¦ã€‚");
                 }
-                notes[i] = new NoteData(n.time, n.index);
+
+                if (note.index != index)
+                {
+                    return ChartParseResult.Failure(
+                        "notes[" + index + "].index å¿…é¡»ä¸º " + index
+                        + "ï¼Œå®é™…ä¸º " + note.index + "ã€‚");
+                }
+
+                notes[index] = new NoteData(note.time, note.index);
             }
 
-            var chart = new ChartData(dto.songId, dto.bpm, dto.offset, notes);
-            return ChartParseResult.Success(chart);
+            return ChartParseResult.Success(new ChartData(dto.songId, dto.bpm, dto.offset, notes));
         }
 
-        /// <summary>JSON ·´ĞòÁĞ»¯µÄÖĞ¼ä DTO¡£×Ö¶ÎÃû±ØĞëÓë JSON ¼üÃûÒ»ÖÂ¡£</summary>
         [Serializable]
-        internal sealed class ChartJsonDto
+        private sealed class ChartJsonDto
         {
             public string songId;
             public float bpm;
@@ -84,31 +87,37 @@ namespace Spotlight.Demos.Demo1.Data
         }
 
         [Serializable]
-        internal sealed class NoteJsonDto
+        private sealed class NoteJsonDto
         {
             public float time;
             public int index;
         }
     }
 
-    /// <summary>JSON ½âÎö½á¹û¡£³É¹¦Ê± Data ·Ç¿Õ£¬Ê§°ÜÊ± ErrorMessage ·Ç¿Õ¡£</summary>
+    /// <summary>
+    /// è°±é¢ JSON è§£æç»“æœï¼›æˆåŠŸå’Œå¤±è´¥çŠ¶æ€äº’æ–¥ã€‚
+    /// </summary>
     public sealed class ChartParseResult
     {
+        private ChartParseResult(bool isSuccess, string errorMessage, ChartData data)
+        {
+            IsSuccess = isSuccess;
+            ErrorMessage = errorMessage;
+            Data = data;
+        }
+
         public bool IsSuccess { get; }
         public string ErrorMessage { get; }
         public ChartData Data { get; }
 
-        private ChartParseResult(bool success, string error, ChartData data)
+        public static ChartParseResult Success(ChartData data)
         {
-            IsSuccess = success;
-            ErrorMessage = error;
-            Data = data;
+            return new ChartParseResult(true, null, data);
         }
 
-        public static ChartParseResult Success(ChartData data)
-            => new ChartParseResult(true, null, data);
-
-        public static ChartParseResult Failure(string error)
-            => new ChartParseResult(false, error, null);
+        public static ChartParseResult Failure(string errorMessage)
+        {
+            return new ChartParseResult(false, errorMessage, null);
+        }
     }
 }

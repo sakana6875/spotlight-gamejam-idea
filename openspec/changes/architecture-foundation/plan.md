@@ -198,3 +198,16 @@ Issue #4 不创建独立 `Spotlight.Contracts` 程序集。原 Issue 描述中�
 实现不得创建正式场景、修改 Build Settings 或引入静态服务入口。
 实现注意：`SessionSmokeEntry` 实际落在 Composition 程序集的 `Composition/Smoke/`，因为 Adapters 已被 Composition 依赖，将入口放入 Adapters 会违反程序集无环约束。
 ***
+## Issue #7：对话生命周期与 Demo 流程实施顺序
+
+1. 读取现有 `IDialogueService`、组合根默认工厂、不可用适配器和调用方，固定请求对象与结果码迁移边界。
+2. 在 Domain Story 增加稳定 `ContentId`、`StoryFlag`、`EndingId` 和 `DialogueRequest`；在 Application Dialogue 增加 `DialogueResult`，再更新 `IDialogueService`。
+3. 实现 `RecordingDialogueService`，只记录请求和生命周期状态，明确处理移动锁定、非法内容和未播放操作。
+4. 定义 `IDemoFlow` 与 `DemoRunResult`，实现 `RecordingDemoFlow` 的进入、重试、退出和一次性结果注入。
+5. 迁移组合根和现有适配器调用方，保持 `UnavailableDialogueService` 对合法内容的不可用结果。
+6. 添加 EditMode 行为测试，覆盖稳定值、对话生命周期、移动锁定、Demo 入口/重试/退出及成功/失败/主动退出边界；不测试私有字段或调用次数。
+7. 执行 OpenSpec 校验、目标程序集编译、Unity EditMode 测试和既有 PlayMode 烟测；将实际测试数量与限制写回本 Change。
+
+Issue #7 不创建剧情资产、导入器、正式 UI、场景流程、存档字段、坏结局判定或通用 Demo 关卡系统。
+***
+
