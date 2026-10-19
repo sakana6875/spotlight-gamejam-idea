@@ -52,8 +52,11 @@ namespace Spotlight.Demos.Demo1.Adapters
 
         public void PlaySfx(string audioCueId)
         {
-            // 阶段 4 先不挂音效资产；阶段 5 场景搭建时再补 _sfxSource 与 clip。
-            // 保留空实现是为了让 IMusicPlaybackService 契约完整。
+          
+            if (_sfxSource != null && _sfxSource.clip != null)
+            {
+                _sfxSource.PlayOneShot(_sfxSource.clip);
+            }
         }
     }
 }
