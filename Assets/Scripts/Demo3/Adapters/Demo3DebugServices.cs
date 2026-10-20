@@ -20,6 +20,7 @@ namespace Healing.Demo3.Adapters
         public IDemo3Audio Audio { get; }
         public IDemoSceneFlow Flow { get; set; }       // 场景内兜底为空
         public IDemo3RunFlags Flags { get; set; }      // 场景内兜底为空
+        public IDemo3Progress Progress { get; set; }   // 场景内兜底为空
 
         public Demo3LocalServices(IInputService input, IDemo3Audio audio)
         {

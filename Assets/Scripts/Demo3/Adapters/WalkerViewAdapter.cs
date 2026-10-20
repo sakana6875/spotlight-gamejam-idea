@@ -126,7 +126,7 @@ namespace Healing.Demo3.Adapters
 
             if (directDrive)
             {
-                if (!jumpAnim || !states.PlayJump(animator, this))
+                if (!jumpAnim || !states.PlayJump(animator, this, vel))
                     states.Play(animator, this, moving, lastFacing);
                 return;
             }
@@ -153,7 +153,7 @@ namespace Healing.Demo3.Adapters
 
             if (directDrive)
             {
-                if (!jumpAnim || !states.PlayJump(animator, this))
+                if (!jumpAnim || !states.PlayJump(animator, this, vel))
                     states.Play(animator, this, moving, lastFacing);
                 return;
             }

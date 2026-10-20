@@ -38,9 +38,17 @@ namespace Healing.Demo3.Adapters
         [Tooltip("起跳圈半径：站在上一个落点（黄点/上一朵蘑菇）多近内按空格有效")]
         [SerializeField] private float jumpZoneRadius = 1.3f;
 
-        [Header("段落阈值")]
-        [Tooltip("第三段终点：大树位置的绝对 Y 坐标（须高于蘑菇段出口）")]
-        [SerializeField] private float treeY = 150f;
+        [Header("幕末（跳完最后一朵蘑菇 → 渐黑 → 切大树场景 Act3）")]
+        [Tooltip("幕末渐黑：全屏黑色 Image 上的 CanvasGroup（起始 Alpha=0）。留空则无渐黑直接切幕")]
+        [SerializeField] private CanvasGroup fadeToBlack;
+        [SerializeField] private float outroFadeSeconds = 1.2f;   // 渐黑时长
+        [SerializeField] private float outroHoldSeconds = 0.4f;   // 全黑保持后切幕
+
+        [Header("场景变体（复用本场景时才用：按本场景被进入的次数自动切换物体 失活/出现）")]
+        [Tooltip("仅第 1 次进入（营救段）激活的物体：男孩相关、开场导演等——第 2 次进入自动失活")]
+        [SerializeField] private List<GameObject> rescueOnlyObjects = new List<GameObject>();
+        [Tooltip("仅第 2 次及以后进入（追寻段）激活的物体：隐藏平台入口等——第 1 次进入自动失活")]
+        [SerializeField] private List<GameObject> pursueOnlyObjects = new List<GameObject>();
 
         [Header("调试")]
         [Tooltip("开启后：牵手段按住方向键每秒打一条走位诊断链（输入/会话位置/钳制范围/刚体/transform），用于定位「男孩原地踏步」")]
@@ -67,7 +75,7 @@ namespace Healing.Demo3.Adapters
 
         private void Start()
         {
-            Debug.Log("[Demo3] Act2Root v10.18d 已加载（男孩跳跃方向动画+跳跃动画预留位版）", this);
+            Debug.Log("[Demo3] Act2Root v10.19a 已加载（末菇落地→渐黑→切大树场景版）", this);
             StartCoroutine(InitWhenReady());
         }
 
@@ -84,6 +92,16 @@ namespace Healing.Demo3.Adapters
             }
             if (!SelfCheck()) { enabled = false; yield break; }
 
+            // 场景变体：按"本场景第几次进入"切换物体 失活/出现（进入次数由载体上的全局进度携带）
+            int visit = services.Progress != null ? services.Progress.EntryCount(Demo3SceneIds.Act2Rescue) : 1;
+            bool pursue = visit >= 2;
+            foreach (var go in rescueOnlyObjects) if (go != null) go.SetActive(!pursue);
+            foreach (var go in pursueOnlyObjects) if (go != null) go.SetActive(pursue);
+            if (rescueOnlyObjects.Count + pursueOnlyObjects.Count > 0)
+                Debug.Log($"[Demo3] Act2 场景第 {visit} 次进入（来源场景：{services.Progress?.LastSceneId ?? "未知"}），" +
+                          $"当前变体：{(pursue ? "追寻段" : "营救段")}（营救专属 {rescueOnlyObjects.Count} 个已{(pursue ? "失活" : "激活")}，" +
+                          $"追寻专属 {pursueOnlyObjects.Count} 个已{(pursue ? "激活" : "失活")}）。", this);
+
             var tops = new List<Vector2>();
             foreach (var m in mushrooms) tops.Add(m.LandingPos);
             session = new Act2Session(boy.transform.position, tops, services.Bus, services.Flow, services.Flags);
@@ -92,7 +110,6 @@ namespace Healing.Demo3.Adapters
             session.JumpApexVisual = jumpApexVisual;
             session.MushroomEntryZone = ToRect(mushroomEntryTrigger.bounds);       // 蓝框（触发器碰撞体的包围盒）
             session.MushroomGatherPoint = mushroomGatherPoint.position;
-            session.TreeY = treeY;
 
             boy.Bind(session.Player.Position);
             girl.Bind(girl.transform.position);   // 女孩呆在她摆放的位置上（开场跪姿点由场景摆放决定）
@@ -147,6 +164,8 @@ namespace Healing.Demo3.Adapters
                 Debug.LogWarning("[Demo3] Act2Root 的 Play Area 未设置：玩家左右不受红框限制。", this);
             if (mushrooms.Count == 0)
                 Debug.LogWarning("[Demo3] Act2Root 的 Mushrooms 为空：蘑菇段将无台可跳。", this);
+            if (fadeToBlack == null)
+                Debug.LogWarning("[Demo3] Act2Root 的 Fade To Black 未拖：跳完最后一朵蘑菇将无渐黑，直接切大树场景。", this);
             return true;
         }
 
@@ -168,14 +187,23 @@ namespace Healing.Demo3.Adapters
                 girl.SetFollow(null);                       // 蘑菇段：女孩改由引导 AI 驱动
                 StartCoroutine(MushroomIntroRoutine());      // 女孩松手 → 跳上第一个蘑菇顶（播片）
             }
-            else if (e.Segment == Act2Segment.ToTree)
+            else if (e.Segment == Act2Segment.Done)
             {
-                handhold.SetFollower(boy.transform);          // 第三段女孩领队、男孩跟随
-                handhold.Snap(session.Player.Position, boy.transform.position);
-                handhold.Active = true;
-                boy.SetHandholding(true);                     // 重新牵手
-                girl.SetHandholding(true);
+                StartCoroutine(OutroRoutine());   // 跳完最后一朵蘑菇：渐黑 → 切大树场景 Act3
             }
+        }
+
+        /// <summary>幕末：画面渐黑 → 黑场片刻 → 切大树场景（大树演出与男孩退场在 Act3 大树场景进行）</summary>
+        private IEnumerator OutroRoutine()
+        {
+            for (float t = 0f; t < outroFadeSeconds; t += Time.deltaTime)
+            {
+                if (fadeToBlack != null) fadeToBlack.alpha = Mathf.Clamp01(t / outroFadeSeconds);
+                yield return null;
+            }
+            if (fadeToBlack != null) fadeToBlack.alpha = 1f;
+            for (float t = 0f; t < outroHoldSeconds; t += Time.deltaTime) yield return null;
+            session.NotifyOutroFinished();
         }
 
         private void OnGirlLanded(GirlLandedOnPlatformEvent e)
@@ -291,7 +319,7 @@ namespace Healing.Demo3.Adapters
             {
                 hasLastBoyJumpPos = false;
                 boy.SetVisualLift(0f);
-                if (!session.GirlIsLeader) boy.Apply(session.Player.Position, session.Player.Velocity);
+                boy.Apply(session.Player.Position, session.Player.Velocity);
             }
 
             // 上行段 + 接管段：女孩由自身 FollowerViewAdapter 跟随男孩（此处无需驱动）
@@ -310,14 +338,6 @@ namespace Healing.Demo3.Adapters
             {
                 hasLastGuidePos = false;
                 if (session.Segment != Act2Segment.Mushrooms) girl.SetJumpAnim(false);
-            }
-
-            // 第三段：操控女孩，男孩跟随
-            if (session.GirlIsLeader)
-            {
-                girl.Apply(session.Player.Position, session.Player.Velocity);
-                handhold.SetLeaderPos(session.Player.Position);
-                boy.Apply(handhold.FollowerPos, session.Player.Velocity);
             }
 
             cameraRig.Apply(session.Player.Position);

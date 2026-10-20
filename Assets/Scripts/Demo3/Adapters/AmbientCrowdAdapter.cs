@@ -15,7 +15,8 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private NpcAgentView malePrefab;    // 男看客预制体
         [SerializeField] private NpcAgentView femalePrefab;  // 女看客预制体
         [SerializeField] private int count = 160;
-        [SerializeField] private Rect area;
+        [Tooltip("人群分布区域：拖一个带 Collider2D 的空物体（用其包围盒随机取点）")]
+        [SerializeField] private Collider2D area;
         [SerializeField] private float driftSpeed = 0.15f;   // 极慢地挪动
         [SerializeField] private Sprite[] lookalikeSprites;  // "像男孩"的背影变体（有区别）
         [SerializeField, Range(0f, 0.2f)] private float lookalikeRatio = 0.05f;
@@ -25,6 +26,7 @@ namespace Healing.Demo3.Adapters
         private readonly List<Vector2> driftTargets = new List<Vector2>();
         private readonly List<NpcAgentView> views = new List<NpcAgentView>();
         private bool spawned;
+        private bool vanished;   // 人群已消失（看客区演出：消失后不再生成）
 
         private void Awake()
         {
@@ -51,7 +53,13 @@ namespace Healing.Demo3.Adapters
 
         public void EnsureSpawned()
         {
-            if (spawned) return;
+            if (spawned || vanished) return;
+            if (area == null)
+            {
+                Debug.LogError("[Demo3] AmbientCrowdAdapter 的 Area 未拖碰撞体：人群没有分布区域，不生成。", this);
+                spawned = true; // 只报一次
+                return;
+            }
             spawned = true;
             for (int i = 0; i < count; i++)
             {
@@ -71,6 +79,7 @@ namespace Healing.Demo3.Adapters
         /// <summary>由场景根每帧驱动（保持适配层模式一致，不用自己的 Update）</summary>
         public void Tick(float dt)
         {
+            if (vanished) return;
             EnsureSpawned();
             for (int i = 0; i < views.Count; i++)
             {
@@ -89,8 +98,21 @@ namespace Healing.Demo3.Adapters
             }
         }
 
-        private Vector2 RandomPointIn() =>
-            new Vector2(Random.Range(area.xMin, area.xMax), Random.Range(area.yMin, area.yMax));
+        private Vector2 RandomPointIn()
+        {
+            Bounds b = area.bounds;
+            return new Vector2(Random.Range(b.min.x, b.max.x), Random.Range(b.min.y, b.max.y));
+        }
+
+        /// <summary>看客区演出：人群全部消失（场景根在渐黑全屏时调用；消失后不再生成）</summary>
+        public void VanishAll()
+        {
+            vanished = true;
+            foreach (var v in views)
+                if (v != null) v.gameObject.SetActive(false);
+            views.Clear();
+            driftTargets.Clear();
+        }
 
         private void OnDestroy()
         {

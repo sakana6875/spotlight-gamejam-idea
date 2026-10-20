@@ -39,8 +39,12 @@ namespace Healing.Demo3.Adapters
         public string coverEarsMoveLeft = "";
         public string coverEarsMoveRight = "";
 
-        [Header("预留：跳跃动画（男孩/女孩各自填自己的；留空则跳跃时按位移方向播移动动画）")]
-        [Tooltip("跳跃素材做好后：在控制器根层级建同名状态（如 Jump）并填到这里，跳跃全程播它；留空 = 现在的方向动画兜底")]
+        [Header("预留：跳跃动画（男孩/女孩各自填自己的；全留空则跳跃时按位移方向播移动动画）")]
+        [Tooltip("向左跳的状态名（如 JumpLeft）：水平速度朝左时播它；留空则回退通用 Jump")]
+        public string jumpLeft = "";
+        [Tooltip("向右跳的状态名（如 JumpRight）：水平速度朝右时播它；留空则回退通用 Jump")]
+        public string jumpRight = "";
+        [Tooltip("通用/竖直跳的状态名（如 Jump）：左右都没填、或纯竖直跳（水平速度≈0）时播它")]
         public string jump = "";
 
         [Header("切换淡入时长（秒）")]
@@ -79,28 +83,34 @@ namespace Healing.Demo3.Adapters
             Check(anim, owner, coverEarsMoveUp);
             Check(anim, owner, coverEarsMoveLeft);
             Check(anim, owner, coverEarsMoveRight);
-            Check(anim, owner, jump);   // 预留：填了才检查
+            Check(anim, owner, jumpLeft);   // 预留三件套：填了才检查
+            Check(anim, owner, jumpRight);
+            Check(anim, owner, jump);
         }
 
         /// <summary>
-        /// 预留：跳跃动画。填了 jump 状态名且控制器里存在 → 全程播它并返回 true；
-        /// 否则返回 false，调用方回退到"按位移方向播移动动画"。
+        /// 预留：跳跃动画（按水平速度选方向）。朝左播 jumpLeft、朝右播 jumpRight、
+        /// 纯竖直或方向位留空回退 jump；全空返回 false，调用方回退"按位移方向播移动动画"。
         /// </summary>
-        public bool PlayJump(Animator anim, UnityEngine.Object owner)
+        public bool PlayJump(Animator anim, UnityEngine.Object owner, Vector2 planarVel)
         {
-            if (anim == null || string.IsNullOrEmpty(jump)) return false;
-            if (jump == current) return true;
-            int hash = Animator.StringToHash(jump);
+            if (anim == null) return false;
+            string s = planarVel.x < -0.05f && !string.IsNullOrEmpty(jumpLeft) ? jumpLeft
+                     : planarVel.x > 0.05f && !string.IsNullOrEmpty(jumpRight) ? jumpRight
+                     : jump;
+            if (string.IsNullOrEmpty(s)) return false;
+            if (s == current) return true;
+            int hash = Animator.StringToHash(s);
             if (!anim.HasState(0, hash))
             {
-                if (warned.Add(WarnKey(anim, jump)))
-                    Debug.LogWarning($"[Demo3] {owner.name} 的 Animator 找不到跳跃状态 \"{jump}\"。" +
+                if (warned.Add(WarnKey(anim, s)))
+                    Debug.LogWarning($"[Demo3] {owner.name} 的 Animator 找不到跳跃状态 \"{s}\"。" +
                                      $"{ExistingStates(anim)}状态须在 Base Layer 根层级、名字逐字一致。" +
                                      "（此警告每个缺失状态只报一次）", owner);
                 return false;
             }
             anim.CrossFade(hash, crossFadeSeconds);
-            current = jump;
+            current = s;
             return true;
         }
 

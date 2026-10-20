@@ -7,7 +7,9 @@ using UnityEngine;
 namespace Healing.Demo3.Adapters
 {
     /// <summary>
-    /// 第四幕「重演」场景根：从看客区域走向大树，迎接结局。
+    /// 【遗留】旧第四幕「重演」场景根：从看客区域走向大树，迎接结局。
+    /// 注意：新的八场景结构里，第四幕重演蘑菇用 Act2-2 场景 + 通用根 Act3Root（Finish Scene Id 填 Act3），
+    /// 结局统一在大树场景 Act3 按进入次数触发——本根不再挂到新场景，仅保留给旧场景兼容。
     /// 引导粒子按区域激发；C 隐藏路线开放（M5→C1→C2→飞升 M3）；
     /// 到达大树区域 → 会话判定结局 → EndingDirector 演出 → 上报 Demo 结果。
     /// </summary>
@@ -18,8 +20,10 @@ namespace Healing.Demo3.Adapters
 
         [Header("场景")]
         [SerializeField] private ActCameraRig cameraRig;
-        [SerializeField] private Rect walkBounds = new Rect(-6f, -200f, 12f, 210f);
-        [SerializeField] private Rect treeZone;                    // 大树触发区
+        [Tooltip("活动范围：拖一个带 Collider2D 的空物体（用其包围盒）")]
+        [SerializeField] private Collider2D walkBoundsArea;
+        [Tooltip("大树触发区：拖一个带 Collider2D 的空物体")]
+        [SerializeField] private Collider2D treeZoneArea;
         [SerializeField] private Transform treePosition;           // 引导粒子的目标方向
 
         [Header("蘑菇与跳跃")]
@@ -57,8 +61,16 @@ namespace Healing.Demo3.Adapters
 
             session = new Act4Session(girl.transform.position, services.Bus, services.Flags, services.Run);
             session.SetJumpZones(jumpZones);
-            session.SetTreeZone(treeZone);
-            session.Player.Bounds = walkBounds;
+            if (treeZoneArea != null)
+            {
+                Bounds zb = treeZoneArea.bounds;
+                session.SetTreeZone(new Rect(zb.min.x, zb.min.y, zb.size.x, zb.size.y));
+            }
+            if (walkBoundsArea != null)
+            {
+                Bounds wb = walkBoundsArea.bounds;
+                session.Player.Bounds = new Rect(wb.min.x, wb.min.y, wb.size.x, wb.size.y);
+            }
 
             girl.Bind(session.Player.Position);
 

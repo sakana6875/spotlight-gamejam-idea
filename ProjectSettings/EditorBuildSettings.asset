@@ -17,4 +17,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Demo3/Act4.unity
     guid: e456cfb909504f54d9ef1d3080668e05
+  - enabled: 1
+    path: Assets/Scenes/Demo3/Act2-1.unity
+    guid: 969e6b0f23a4b6045bf007975bbb1cf1
+  - enabled: 1
+    path: Assets/Scenes/Demo3/Act2-2.unity
+    guid: ca6107d99afd047479cb55f0e361df5a
+  - enabled: 1
+    path: Assets/Scenes/Demo3/Hidden1.unity
+    guid: 4b94db3be1bc16b489eda71c6316570d
+  - enabled: 1
+    path: Assets/Scenes/Demo3/Hidden2.unity
+    guid: f6097b448d0e9cf48900a35f7112d212
   m_configObjects: {}

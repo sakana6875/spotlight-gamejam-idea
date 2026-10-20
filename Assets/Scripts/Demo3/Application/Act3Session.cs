@@ -7,13 +7,14 @@ namespace Healing.Demo3.Application
     public enum Act3Stage { WalkBack = 0, InCrowd = 1, Fainting = 2, Done = 3 }
 
     /// <summary>
-    /// 第三幕「追寻」用例编排：从大树反向走回看客区域。
+    /// 女孩独行幕（Act2-1 追寻 / Act4 看客 / Act2-2 重演）用例编排。
     /// 与第二幕的差别（需求）：
     ///  - 操控女孩，可慢跑，速度较上一幕稍快
+    ///  - 蘑菇垫固定动线：落地锁定移动，只能按跳跃键沿跳区链前进（MoveLocked）；
+    ///    落到标记 LandingIsWalkable 的平台（如 L1）才恢复 WASD，且活动范围钳到平台
     ///  - 女孩能看见未点亮平台的微弱轮廓（可见性由适配层按身份配置）
-    ///  - 隐藏路线 B 开放：M8→B1→B2→L1(按 E 点亮石碑)→B2→M4(高处坠落单向)
-    ///  - 沙地天亮、旧脚印变淡、新脚印更清晰
-    ///  - 看客无视女孩（不回避不追逐），人群中迷失 → 晕倒 → 第四幕
+    ///  - 石碑交互（L1 按 E 传送隐藏区——传送由场景根执行，会话只记账）
+    ///  - 可选看客无视人群：迷失计时只进不退 → 晕倒 → 切 FaintGoToSceneId
     /// </summary>
     public sealed class Act3Session
     {
@@ -24,13 +25,21 @@ namespace Healing.Demo3.Application
         public float RunSpeed = 3.4f;           // 比第二幕 2.2 快
         public float JumpPlanarSpeed = 6.5f;
         public float FaintDelay = 8f;           // 在无视人群中迷失所需时间
+        /// <summary>晕倒演出播完后切入的场景（由场景根配置；默认 Act2-2 重演蘑菇）</summary>
+        public string FaintGoToSceneId = Demo3SceneIds.Act2Reenact;
 
         public Act3Stage Stage { get; private set; } = Act3Stage.WalkBack;
         public ActWalkSession Player { get; }
         public float CrowdTimer { get; private set; }
 
+        /// <summary>移动锁定：跳上蘑菇垫后为 true（只能跳，WASD 无效）；落到可行走平台/地面为 false</summary>
+        public bool MoveLocked { get; private set; }
+
         private readonly List<JumpZoneData> zones = new List<JumpZoneData>();
         private Rect crowdZone;
+        private Rect fullBounds;                 // 全场活动范围（落到可行走平台时会临时换成平台范围）
+        private bool hasFullBounds;
+        private JumpZoneData currentZone;        // 当前这一跳使用的跳区（落地后按它恢复移动状态）
         private bool jumping;
         private float jumpT;
         private Vector2 jumpFrom, jumpTo;
@@ -49,12 +58,25 @@ namespace Healing.Demo3.Application
         public void SetJumpZones(IEnumerable<JumpZoneData> z) { zones.Clear(); zones.AddRange(z); }
         public void SetCrowdZone(Rect r) => crowdZone = r;
 
+        /// <summary>全场活动范围（场景根由拖入的碰撞体换算后设置）</summary>
+        public void SetWalkBounds(Rect r) { fullBounds = r; hasFullBounds = true; Player.Bounds = r; }
+
+        /// <summary>强制进入"可行走"状态并钳到指定范围（从隐藏区返回 L1 平台时用；宽高为 0 则用全场范围）</summary>
+        public void ForceFreeMove(Rect walkArea)
+        {
+            MoveLocked = false;
+            Player.ControlLocked = false;
+            Player.Bounds = walkArea.width > 0f && walkArea.height > 0f ? walkArea
+                          : hasFullBounds ? fullBounds : Player.Bounds;
+        }
+
         public bool TryBeginJump()
         {
             if (jumping || Stage != Act3Stage.WalkBack || Player.ControlLocked) return false;
             for (int i = 0; i < zones.Count; i++)
             {
                 if (!zones[i].Contains(Player.Position)) continue;
+                currentZone = zones[i];
                 jumpFrom = Player.Position;
                 jumpTo = zones[i].Landing;
                 jumping = true; jumpT = 0f;
@@ -86,13 +108,21 @@ namespace Healing.Demo3.Application
                     jumping = false;
                     Player.ControlLocked = false;
                     Player.Teleport(jumpTo);
+                    // 落地恢复移动状态：可行走平台（L1）恢复 WASD 并钳到平台范围；
+                    // 蘑菇垫锁移动（只能继续跳，固定动线）
+                    MoveLocked = !currentZone.LandingIsWalkable;
+                    Player.Bounds = currentZone.LandingIsWalkable
+                        ? (currentZone.LandingWalkArea.width > 0f && currentZone.LandingWalkArea.height > 0f
+                            ? currentZone.LandingWalkArea
+                            : hasFullBounds ? fullBounds : Player.Bounds)
+                        : Player.Bounds;
                     bus.Publish(new JumpLandedEvent(jumpTo, true));
                 }
                 return;
             }
 
             Player.DynamicFloorY = cameraFloorY;
-            Player.Tick(dt, move);
+            Player.Tick(dt, MoveLocked ? Vector2.zero : move); // 蘑菇垫上：WASD 无效，只能跳
 
             // 看客区域：人群无视，迷失计时
             if (Stage == Act3Stage.WalkBack && crowdZone.Contains(Player.Position))
@@ -111,12 +141,12 @@ namespace Healing.Demo3.Application
             }
         }
 
-        /// <summary>晕倒演出播完（导演脚本回调）→ 第四幕</summary>
+        /// <summary>晕倒演出播完（导演脚本回调）→ 切 FaintGoToSceneId 配置的场景</summary>
         public void NotifyFaintFinished()
         {
             if (Stage != Act3Stage.Fainting) return;
             Stage = Act3Stage.Done;
-            flow?.GoTo(Demo3SceneIds.Act4Reenact);
+            flow?.GoTo(FaintGoToSceneId);
         }
     }
 }

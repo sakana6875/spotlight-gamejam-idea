@@ -39,6 +39,29 @@ namespace Healing.Demo3.Application
         void MarkLit(string tabletId);
     }
 
+    // ============ 跨场景进度端口（场景进入计数 + 隐藏区域访问记录）============
+    /// <summary>
+    /// 结局分支与场景变体用的全局参数（本次运行累计；只存字符串 ID 与计数，不存 Unity 引用）：
+    ///  - EntryCount：进入某场景的次数——"根据进入次数区分现在进行到哪一幕"
+    ///    （如 Act2 第 1 次=营救、第 2 次=追寻；大树/结局场景按次数推进剧情）；
+    ///  - HasVisitedHidden：是否进入过隐藏区域（L1/L2 隐藏场景）——触发不同结局；
+    ///  - LastSceneId：来源场景——场景变体按"从哪来"切换物体 失活/出现。
+    /// 实现：跨场景载体（DontDestroyOnLoad）。正式接入全局架构后迁移到 ProgressManager。
+    /// </summary>
+    public interface IDemo3Progress
+    {
+        string CurrentSceneId { get; }          // 当前场景（Build Settings 名）
+        string LastSceneId { get; }             // 上一个场景（没有则 null）
+        int EntryCount(string sceneId);         // 进入某场景的次数（含当前这次）
+        bool HasVisitedHidden(string hiddenId); // 是否进入过隐藏区域（如 "L1"）
+        void MarkHiddenVisited(string hiddenId);
+
+        /// <summary>记录"离开某场景去隐藏区"时的站位与行走范围（返回时原地复活，如回到 L1 平台上）</summary>
+        void SetReturnPoint(string sceneId, Vector2 pos, Rect walkArea);
+        /// <summary>取走该场景的返回点（取出即消费，只生效一次）；没有记录返回 false</summary>
+        bool TryConsumeReturnPoint(string sceneId, out Vector2 pos, out Rect walkArea);
+    }
+
     // ============ Demo3 的音频端口（连续混音）============
     public interface IDemo3Audio
     {
@@ -56,6 +79,7 @@ namespace Healing.Demo3.Application
         IDemo3Audio Audio { get; }
         IDemoSceneFlow Flow { get; }
         IDemo3RunFlags Flags { get; }
+        IDemo3Progress Progress { get; }
     }
 }
 
