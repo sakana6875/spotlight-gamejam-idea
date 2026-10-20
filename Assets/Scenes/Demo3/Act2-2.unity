@@ -1613,7 +1613,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45920062aa67c8c4095b138255fff5ec, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  girl: {fileID: 0}
+  girl: {fileID: 1801060064}
   cameraRig: {fileID: 1694646059}
   walkBoundsArea: {fileID: 1264508967}
   crowdZoneArea: {fileID: 0}
@@ -1650,7 +1650,8 @@ MonoBehaviour:
     LandingWalkArea: {fileID: 1688014053}
     Enabled: 1
   jumpApexVisual: 1.2
-  tablets: []
+  tablets:
+  - {fileID: 677493390}
   ambientCrowd: {fileID: 0}
   crowdVanishTrigger: {fileID: 0}
   crowdVanishFadeSeconds: 1

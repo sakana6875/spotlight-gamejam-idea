@@ -36,10 +36,11 @@ namespace Healing.Demo3.Application
         public bool MoveLocked { get; private set; }
 
         private readonly List<JumpZoneData> zones = new List<JumpZoneData>();
+        private readonly Vector2 startPos;       // 出生点（自动链第一环的圆心）
         private Rect crowdZone;
         private Rect fullBounds;                 // 全场活动范围（落到可行走平台时会临时换成平台范围）
         private bool hasFullBounds;
-        private JumpZoneData currentZone;        // 当前这一跳使用的跳区（落地后按它恢复移动状态）
+        private JumpZoneData? currentZone;       // 当前这一跳使用的跳区（落地后按它恢复移动状态；null=尚未起跳）
         private bool jumping;
         private float jumpT;
         private Vector2 jumpFrom, jumpTo;
@@ -52,6 +53,7 @@ namespace Healing.Demo3.Application
         public Act3Session(Vector2 girlStart, IEventBus bus, IDemoSceneFlow flow, IDemo3RunFlags flags)
         {
             this.bus = bus; this.flow = flow; this.flags = flags;
+            startPos = girlStart;
             Player = new ActWalkSession(girlStart, RunSpeed);
         }
 
@@ -70,12 +72,20 @@ namespace Healing.Demo3.Application
                           : hasFullBounds ? fullBounds : Player.Bounds;
         }
 
+        /// <summary>当前是否处于可按跳状态（供适配层区分「按跳没反应」是锁定中还是不在任何跳区）</summary>
+        public bool CanBeginJump => !jumping && Stage == Act3Stage.WalkBack && !Player.ControlLocked;
+
         public bool TryBeginJump()
         {
-            if (jumping || Stage != Act3Stage.WalkBack || Player.ControlLocked) return false;
+            if (!CanBeginJump) return false;
             for (int i = 0; i < zones.Count; i++)
             {
                 if (!zones[i].Contains(Player.Position)) continue;
+                // 自动链严格续链：链圈只在「圆心 == 当前立足点」时可踩——
+                // 没起跳过就只认出生点引出的第一环，起跳过后只认上一落点引出的下一环；
+                // 支线/可行走平台（经手配连线到达）上链圈一律不响应，支线必须走手配连线。
+                // 否则站在支线平台上会被旁边的主线链圈（半径较大）吞掉起跳、直接跳回主线。
+                if (IsChainZone(zones[i]) && !ChainContinuityOk(zones[i])) continue;
                 currentZone = zones[i];
                 jumpFrom = Player.Position;
                 jumpTo = zones[i].Landing;
@@ -85,6 +95,14 @@ namespace Healing.Demo3.Application
                 return true;
             }
             return false;
+        }
+
+        private static bool IsChainZone(JumpZoneData z) => z.Id != null && z.Id.StartsWith("chain-");
+
+        private bool ChainContinuityOk(JumpZoneData z)
+        {
+            Vector2 anchor = currentZone.HasValue ? currentZone.Value.Landing : startPos;
+            return ((Vector2)z.Center - anchor).sqrMagnitude <= 0.04f; // 0.2 米容差（浮点噪声）
         }
 
         /// <summary>E 键交互（石碑等）。由适配层探测到可交互物后调用。</summary>
@@ -110,10 +128,11 @@ namespace Healing.Demo3.Application
                     Player.Teleport(jumpTo);
                     // 落地恢复移动状态：可行走平台（L1）恢复 WASD 并钳到平台范围；
                     // 蘑菇垫锁移动（只能继续跳，固定动线）
-                    MoveLocked = !currentZone.LandingIsWalkable;
-                    Player.Bounds = currentZone.LandingIsWalkable
-                        ? (currentZone.LandingWalkArea.width > 0f && currentZone.LandingWalkArea.height > 0f
-                            ? currentZone.LandingWalkArea
+                    JumpZoneData cz = currentZone.Value; // 起跳时必选过区，这里不为空
+                    MoveLocked = !cz.LandingIsWalkable;
+                    Player.Bounds = cz.LandingIsWalkable
+                        ? (cz.LandingWalkArea.width > 0f && cz.LandingWalkArea.height > 0f
+                            ? cz.LandingWalkArea
                             : hasFullBounds ? fullBounds : Player.Bounds)
                         : Player.Bounds;
                     bus.Publish(new JumpLandedEvent(jumpTo, true));

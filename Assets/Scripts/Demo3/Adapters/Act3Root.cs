@@ -120,7 +120,7 @@ namespace Healing.Demo3.Adapters
 
         private void Start()
         {
-            Debug.Log($"[Demo3] Act3Root v10.19c 已加载（触发区防误入失活/显现版，场景 {SceneName}）", this);
+            Debug.Log($"[Demo3] Act3Root v10.20 已加载（自动链严格续链＋按跳无响应日志版，场景 {SceneName}）", this);
             StartCoroutine(InitWhenReady());
         }
 
@@ -265,7 +265,16 @@ namespace Healing.Demo3.Adapters
             return true;
         }
 
-        private void OnJumpPressed() => session?.TryBeginJump();
+        private void OnJumpPressed()
+        {
+            if (session == null) return;
+            if (session.TryBeginJump()) return;
+            if (finishing || !session.CanBeginJump) return; // 切场中/空中/锁定中的按跳属正常忽略
+            Debug.Log($"[Demo3] 按了跳跃，但当前位置 {session.Player.Position} 不在任何可用跳区内：" +
+                      "自动链只认「从上一落点续跳」（支线/可行走平台上主线链圈不响应）——" +
+                      "支线请在 Extra Jump Zones 配连线，并让它的 Zone 碰撞体罩住站立点；" +
+                      "主线请确认女孩确实站在上一朵蘑菇的 Point 上。", this);
+        }
 
         private void OnInteractPressed()
         {

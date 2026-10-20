@@ -34,8 +34,25 @@ namespace Healing.Demo3.Adapters
         [Header("演示衔接（可选）：收尾演出结束后切到第二幕")]
         [SerializeField] private Demo3FlowCarrier flowCarrier; // 场景内引用；留空则只上报结果
 
+        [Header("开场演出（Fall 落下 → 摔在中央 → 任意移动键晃动 → 起身；不需要就勾掉）")]
+        [SerializeField] private bool playOpening = true;
+        [Tooltip("落下动画的状态名（与 Animator 里的状态逐字一致，默认 Fall）")]
+        [SerializeField] private string openingFallState = "Fall";
+        [Tooltip("落下时长（秒）= Fall 剪辑长度，落完女孩摔在画面中央")]
+        [SerializeField] private float openingFallSeconds = 2.2f;
+        [Tooltip("摔在地上趴着的状态名（可选；留空 = 停在 Fall 剪辑最后一帧）")]
+        [SerializeField] private string openingFallenState = "";
+        [Tooltip("起身动画的状态名（可选；留空 = 起身时长过后直接交还常规驱动）")]
+        [SerializeField] private string openingRiseState = "";
+        [SerializeField] private float openingRiseSeconds = 1.0f;
+        [Tooltip("起身所需晃动次数（需求：3 次）")]
+        [SerializeField] private int openingShakes = 3;
+        [Tooltip("两次有效晃动的最小间隔（需求：暂定 1 秒；长按只算一次）")]
+        [SerializeField] private float openingShakeInterval = 1f;
+
         private IDemo3Services services;
         private Demo3Session session;
+        private OpeningIntroSession opening;
         private bool handedOff;
 
         /// <summary>由 SessionRoot（唯一组合根）在场景加载后调用；未调用则走本地模式</summary>
@@ -57,7 +74,28 @@ namespace Healing.Demo3.Adapters
 
             session = new Demo3Session(tuning.ToData(), services.Audio, services.Run, services.Bus);
             SetupStageBounds();
+
+            // 开场演出：原地播 Fall（刚体钉在出生点，剪辑只播画面、人物不产生位移）→ 摔在画面中央
+            // → 晃动 N 次 → 起身 → 第一幕开始。演出期间第一幕完全不推进（人群未聚集、压迫未计时、输入不生效）
             girl.Bind(session);
+            if (playOpening && girl != null)
+            {
+                opening = new OpeningIntroSession
+                {
+                    FallSeconds = openingFallSeconds,
+                    ShakesRequired = openingShakes,
+                    ShakeInterval = openingShakeInterval,
+                    RiseSeconds = openingRiseSeconds,
+                };
+                opening.Shook += n =>
+                {
+                    girl.ShakeOnce();
+                    Debug.Log($"[Demo3] 开场：第 {n}/{openingShakes} 次晃动" +
+                              (n < openingShakes ? $"。（再晃 {openingShakes - n} 次起身）" : "——晃动已满，女孩起身……"), this);
+                };
+                girl.PlayOpeningState(openingFallState);
+                Debug.Log("[Demo3] 开场演出：原地播 Fall……（演出期间输入不生效，人物不产生位移）", this);
+            }
         }
 
         /// <summary>
@@ -82,6 +120,32 @@ namespace Healing.Demo3.Adapters
         private void Update()
         {
             if (session == null) return;
+
+            // 开场演出：落下 → 等晃动 → 起身，期间第一幕不推进（周围空无一物，只有小女孩）
+            if (opening != null)
+            {
+                var prev = opening.Stage;
+                opening.Tick(Time.deltaTime, services.Input.Move);
+                if (opening.Stage != prev)
+                {
+                    if (opening.Stage == OpeningStage.Fallen)
+                    {
+                        girl.PlayOpeningState(openingFallenState); // 留空则停在 Fall 最后一帧（趴着）
+                        Debug.Log($"[Demo3] 开场：摔在画面中央。按任意移动键晃动她的身体（{openingShakes} 次，每次间隔至少 {openingShakeInterval} 秒）。", this);
+                    }
+                    else if (opening.Stage == OpeningStage.Rising)
+                    {
+                        girl.PlayOpeningState(openingRiseState);
+                    }
+                    else if (opening.Stage == OpeningStage.Done)
+                    {
+                        opening = null;
+                        girl.EndOpening(); // 清直驱缓存，下一帧 Apply 按 移动/朝向/姿态 重新选状态
+                        Debug.Log("[Demo3] 开场演出结束——第一幕开始（人群从四周聚拢）。", this);
+                    }
+                }
+                return;
+            }
 
             GetViewBounds(out Vector2 min, out Vector2 max);
             session.Tick(Time.deltaTime, services.Input.Move, min, max);

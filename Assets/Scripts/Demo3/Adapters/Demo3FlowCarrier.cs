@@ -92,7 +92,20 @@ namespace Healing.Demo3.Adapters
         private void InjectServicesInto(Demo3LocalServices s)
         {
             var root = FindFirstObjectByType<ActSceneRootBase>();
-            if (root != null) root.Configure(s);
+            // 场景根没跑起来时整幕会静默卡死（女孩不动、不钳制、相机不跟），在这里一次性点破：
+            // 找不到激活的场景根（物体未激活/没挂根），或找到了但组件被勾掉（禁用）。
+            if (root == null)
+            {
+                if (FindFirstObjectByType<Demo3SceneRoot>() != null) return; // 第一幕是自含根（本地服务），不算缺失
+                Debug.LogError($"[Demo3] 场景 {SceneManager.GetActiveScene().name} 里没有激活的场景根" +
+                               "（Act1Root/Act2Root/Act3Root/Act3TreeRoot/HiddenAreaRoot 之一）——本幕不会运行。" +
+                               "请确认场景里挂了场景根的物体处于激活状态（Inspector 左上角勾上）。");
+                return;
+            }
+            if (!root.enabled)
+                Debug.LogError($"[Demo3] 场景根 {root.name}（{root.GetType().Name}）的组件被禁用了——本幕不会运行。" +
+                               "请在 Inspector 里勾上该组件左边的勾。", root);
+            root.Configure(s);
         }
 
         // ---- IDemo3RunFlags（纯数据）----

@@ -39,7 +39,7 @@ namespace Healing.Demo3.Adapters
             [NonSerialized] public bool Fired;
             [NonSerialized] public bool BlockedLogged;
             [NonSerialized] public bool WasInside; // 上一帧玩家是否在判定范围内（进区即时诊断用）
-            [NonSerialized] public bool NearLogged; // 已报过一次「走近但没进判定」
+            [NonSerialized] public float NextNearLogTime; // 「接近中」坐标连续播报的下次时刻（1 秒 1 条）
         }
 
         [Header("角色")]
@@ -63,7 +63,8 @@ namespace Healing.Demo3.Adapters
         [Tooltip("进场时从黑场渐亮（上一幕是渐黑收尾的，勾上衔接自然）")]
         [SerializeField] private bool fadeInOnStart = true;
 
-        [Header("自动走位区（走进区域 → 自动走到目标点 → 到达后可选切场景）")]
+        [Header("自动走位区（仅第 1 次进大树场景生效：走进区域 → 自动走到目标点 → 到达后可选切场景）")]
+        [Tooltip("第 2 次及以后进入（结局 visit）所有走位区一律不生效——女孩自由走动，结局由结局区触发")]
         [SerializeField] private List<AutoWalkZone> autoWalkZones = new List<AutoWalkZone>();
 
         [Header("场景变体（按第几次进大树场景自动切换）")]
@@ -80,8 +81,11 @@ namespace Healing.Demo3.Adapters
         [Tooltip("结局判定所需旗标 ID 清单（如 L1、L2、Visited_L1、Visited_L2）。全亮=结局二「是你吗？」，否则=结局一「还是你」；" +
                  "留空则恒为结局二（想要收集分支就填上）")]
         [SerializeField] private List<string> requiredTablets = new List<string>();
-        [Tooltip("结局导演（可选）：拖 EndingDirector 播结局演出（女孩倚树/大姐姐相拥/语音）；不拖则渐黑定格即结局")]
+        [Tooltip("结局导演（可选）：拖 EndingDirector 播演员版结局演出（女孩倚树/大姐姐相拥/语音）；不拖则渐黑定格即结局")]
         [SerializeField] private EndingDirector endingDirector;
+        [Tooltip("全屏结局播放器（可选）：拖场景里的 EndingFullscreenPlayer（盖屏 Canvas+Animator 播全屏纯动画结局）。" +
+                 "拖了它优先于 Ending Director——纯动画演出用它")]
+        [SerializeField] private EndingFullscreenPlayer fullscreenEnding;
 
         private IDemo3Services services;
         private ActWalkSession player;
@@ -98,7 +102,7 @@ namespace Healing.Demo3.Adapters
 
         private void Start()
         {
-            Debug.Log("[Demo3] Act3TreeRoot v10.19j 已加载（大树枢纽：走位区坐标对质诊断版）", this);
+            Debug.Log("[Demo3] Act3TreeRoot v10.20c 已加载（重回大树：自由走动等结局；结局支持全屏纯动画播放器）", this);
             StartCoroutine(InitWhenReady());
         }
 
@@ -127,7 +131,7 @@ namespace Healing.Demo3.Adapters
             bool first = visit <= 1; firstVisit = first;
             Debug.Log($"[Demo3] 大树场景第 {visit} 次进入（来源场景：{services.Progress?.LastSceneId ?? "未知"}），" +
                       (first ? "男孩在场——把两人牵进大树触发器播退场演出；结局区此时失活防误触发。"
-                             : "只剩女孩（男孩已退场）；结局区现已激活——走进即演出结局。"), this);
+                             : "只剩女孩（男孩已退场）；走位区本次全部停用——自由走动，走进结局区即触发结局。"), this);
 
             // 变体清单：按进入次数切换物体 失活/出现
             foreach (var go in firstVisitOnlyObjects) if (go != null) go.SetActive(first);
@@ -219,8 +223,9 @@ namespace Healing.Demo3.Adapters
             }
 
             // 自动走位区：走进划定区域 → 锁输入，自动走到目标点
-            // 防误入：RequireTreeDone 的区域在男孩退场前（boyPresent=true 即演出未播）不激活
-            if (!autoWalking && !player.ControlLocked)
+            // 防误入：RequireTreeDone 的区域在男孩退场前（boyPresent=true 即演出未播）不激活；
+            // 仅第 1 次进入生效——第 2 次起是结局 visit：女孩自由走动，结局由结局区触发
+            if (!autoWalking && !player.ControlLocked && firstVisit)
             {
                 foreach (var z in autoWalkZones)
                 {
@@ -233,23 +238,22 @@ namespace Healing.Demo3.Adapters
                                   (z.Once && z.Fired ? "（本条 Once 已消费过，不再触发）" :
                                    z.RequireTreeDone && boyPresent ? "（男孩未退场，本条被 Require Tree Done 拦住）" :
                                    "，开始自动走位。"), this);
-                    else if (!insideNow && !z.NearLogged)
+                    else if (!insideNow && Time.unscaledTime >= z.NextNearLogTime)
                     {
-                        // 走近（2.5 米内）但没进判定：把双方坐标打出来对质——
-                        // 视觉站在绿框里却没日志 = 绿框物体的碰撞体没罩住绿框（尺寸/偏移不对），按坐标调整
+                        // 接近中（2.5 米内）每秒报一次坐标：空场景没参照物，盯着 y 爬升就知道还有多远进带
                         Vector2 pp = player.Position;
                         Bounds zb = z.Zone.bounds;
                         float dx = Mathf.Max(zb.min.x - pp.x, 0f, pp.x - zb.max.x);
                         float dy = Mathf.Max(zb.min.y - pp.y, 0f, pp.y - zb.max.y);
-                        if (dx * dx + dy * dy < 2.5f * 2.5f)
+                        float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                        if (dist < 2.5f)
                         {
-                            z.NearLogged = true;
-                            Debug.Log($"[Demo3] 你走到了走位区「{z.Target.name}」附近但没进判定：" +
-                                      $"你的逻辑位置 {pp}，判定包围盒 中心 {(Vector2)zb.center} 尺寸 {(Vector2)zb.size}。" +
-                                      "视觉上若已站进绿框＝碰撞体和绿框不重合（Offset/Size 调一下）。", this);
+                            z.NextNearLogTime = Time.unscaledTime + 1f;
+                            Debug.Log($"[Demo3] 接近走位区「{z.Target.name}」中：你的逻辑位置 {pp}，距判定带 {dist:F1} 米" +
+                                      $"（带范围 x {zb.min.x:F1}~{zb.max.x:F1}、y {zb.min.y:F1}~{zb.max.y:F1}）。" +
+                                      "继续往带子方向走，走进即自动走位。", this);
                         }
                     }
-                    if (insideNow) z.NearLogged = false;
                     z.WasInside = insideNow;
                     if (z.Once && z.Fired) continue;
                     if (z.RequireTreeDone && boyPresent)
@@ -345,8 +349,9 @@ namespace Healing.Demo3.Adapters
 
         /// <summary>
         /// 结局演出：仅第 2 次及以后进入大树场景才会走到这里（第 1 次在 Update 就被拦住）。
-        /// 按隐藏石碑点亮情况判定结局（EndingRules），有 EndingDirector 就交给它演出（它自己掌管渐黑，根不预渐黑以免闪屏）；
-        /// 没有导演则根渐黑停住（Demo 到此为止，不再交还控制）。
+        /// 按隐藏石碑点亮情况判定结局（EndingRules）；拖了 Fullscreen Ending 用全屏纯动画播放器（优先），
+        /// 否则有 EndingDirector 交给它播演员版演出（它自己掌管渐黑，根不预渐黑以免闪屏）；
+        /// 都没有则根渐黑停住（Demo 到此为止，不再交还控制）。
         /// </summary>
         private IEnumerator EndingRoutine()
         {
@@ -362,6 +367,12 @@ namespace Healing.Demo3.Adapters
             Debug.Log($"[Demo3] 结局触发：判定为 {Demo3EndingName(ending)}。" +
                       (ending == Demo3Ending.IsItYou ? "全部隐藏石碑都已点亮。" : $"未点亮的石碑：{(miss.Length > 0 ? miss.ToString() : "（未配置 Required Tablets，按结局一处理）")}"), this);
 
+            if (fullscreenEnding != null)
+            {
+                // 全屏纯动画结局：交给播放器盖屏淡入+播放，根不预渐黑
+                fullscreenEnding.Play(ending, () => Debug.Log("[Demo3] 结局演出播完（Demo 结束）。", this));
+                yield break;
+            }
             if (endingDirector != null)
             {
                 endingDirector.Play(ending, () => Debug.Log("[Demo3] 结局演出播完（Demo 结束）。", this));

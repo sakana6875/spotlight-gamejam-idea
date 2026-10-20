@@ -18,12 +18,17 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private bool directDrive = true;
         [SerializeField] private Demo3AnimStateDriver states = new Demo3AnimStateDriver();
 
+        [Header("开场晃动表现（Demo3SceneRoot 开场演出用）")]
+        [SerializeField] private float shakeDegrees = 9f;    // 晃动摆角（度）
+        [SerializeField] private float shakeSeconds = 0.35f; // 单次晃动时长（秒）
+
         private Rigidbody2D rb;
         private Demo3Session session;
         private Vector2 pendingPos;
         private int lastFacing = Demo3AnimParams.FacingDown; // 初始面向镜头（向前👇）
         private bool holdingHands;
         private int appearance;
+        private float shakeT = -1f; // 开场晃动计时（<0 = 未在晃）
 
         private void Awake()
         {
@@ -98,6 +103,24 @@ namespace Healing.Demo3.Adapters
         private void FixedUpdate()
         {
             if (session != null) rb.MovePosition(pendingPos);
+        }
+
+        /// <summary>开场演出专用：按状态名直切一次性片段（Fall/趴地/起身）。开场期间场景根不调用 Apply。</summary>
+        public void PlayOpeningState(string stateName) => states.PlayAction(animator, this, stateName);
+
+        /// <summary>开场结束：清直驱缓存，下一帧 Apply 重新按 移动/朝向/姿态 选状态</summary>
+        public void EndOpening() => states.ResetCache();
+
+        /// <summary>开场晃动表现：身体轻微摆动一下（纯表现，不改逻辑位置）</summary>
+        public void ShakeOnce() { if (shakeT < 0f) shakeT = 0f; }
+
+        private void LateUpdate()
+        {
+            if (shakeT < 0f) return;
+            shakeT += Time.deltaTime;
+            float d = shakeT / Mathf.Max(0.01f, shakeSeconds);
+            if (d >= 1f) { shakeT = -1f; transform.localRotation = Quaternion.identity; }
+            else transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(d * Mathf.PI * 2f) * shakeDegrees * (1f - d));
         }
     }
 }
