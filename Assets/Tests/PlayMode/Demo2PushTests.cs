@@ -4,6 +4,8 @@ using System.Reflection;
 using NUnit.Framework;
 using Spotlight.Demos.Demo2;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
@@ -12,6 +14,7 @@ namespace Spotlight.Tests.PlayMode
     public sealed class Demo2PushTests
     {
         private readonly List<Object> _createdObjects = new List<Object>();
+        private readonly List<InputDevice> _createdDevices = new List<InputDevice>();
 
         [UnitySetUp]
         public IEnumerator UnitySetUp()
@@ -24,6 +27,16 @@ namespace Spotlight.Tests.PlayMode
         public IEnumerator UnityTearDown()
         {
             Time.timeScale = 1f;
+
+            for (int index = _createdDevices.Count - 1; index >= 0; index--)
+            {
+                if (_createdDevices[index] != null)
+                {
+                    InputSystem.RemoveDevice(_createdDevices[index]);
+                }
+            }
+
+            _createdDevices.Clear();
 
             for (int index = _createdObjects.Count - 1; index >= 0; index--)
             {
@@ -192,6 +205,93 @@ namespace Spotlight.Tests.PlayMode
 
             Assert.That(obstacleCollider.bounds.max.x, Is.LessThanOrEqualTo(wall.bounds.min.x + 0.02f));
         }
+        [UnityTest]
+        public IEnumerator FrozenOrMissedPush_DoesNotPublishUntilFirstSuccess()
+        {
+            Demo2SimulationController simulationController = CreateSimulationController();
+            PlayerMoveController player = CreatePlayer(simulationController);
+            Demo2PushController pushController = player.GetComponent<Demo2PushController>();
+            int startedCount = 0;
+            pushController.PushStarted += () => startedCount++;
+
+            Assert.That(pushController.TryPush(), Is.False);
+            Assert.That(startedCount, Is.Zero);
+
+            CreatePushableObstacle(new Vector2(1.05f, 0f));
+            Physics2D.SyncTransforms();
+            simulationController.AcquirePause(Demo2PauseReason.Dialogue);
+            Assert.That(pushController.TryPush(), Is.False);
+            Assert.That(startedCount, Is.Zero);
+
+            simulationController.ReleasePause(Demo2PauseReason.Dialogue);
+            Assert.That(pushController.TryPush(), Is.True);
+            Assert.That(startedCount, Is.EqualTo(1));
+            Assert.That(pushController.TryPush(), Is.True);
+            Assert.That(startedCount, Is.EqualTo(1));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ObstacleEnteringPit_PublishesPitFilledOnce()
+        {
+            GameObject invalidPit = CreateObject("InvalidPit");
+            invalidPit.AddComponent<BoxCollider2D>();
+            LogAssert.Expect(LogType.Error, "Demo2PitFillTrigger 的 Collider2D 必须是 Trigger。");
+            Demo2PitFillTrigger invalidTrigger = invalidPit.AddComponent<Demo2PitFillTrigger>();
+            Assert.That(invalidTrigger.enabled, Is.False);
+
+            GameObject pitObject = CreateObject("Pit");
+            BoxCollider2D pitCollider = pitObject.AddComponent<BoxCollider2D>();
+            pitCollider.isTrigger = true;
+            pitCollider.size = new Vector2(1f, 1f);
+            Demo2PitFillTrigger pit = pitObject.AddComponent<Demo2PitFillTrigger>();
+            int filledCount = 0;
+            pit.PitFilled += () => filledCount++;
+
+            Rigidbody2D otherBody = CreateBody("NotObstacle", new Vector2(0f, 2f));
+            yield return MoveBodyInto(otherBody, new Vector2(0f, -8f), 20);
+            Assert.That(filledCount, Is.Zero);
+
+            Demo2PushableObstacle obstacle = CreatePushableObstacle(new Vector2(0f, 3f));
+            yield return MoveBodyInto(obstacle.Rigidbody, new Vector2(0f, -8f), 30);
+            Assert.That(filledCount, Is.EqualTo(1));
+
+            obstacle.Rigidbody.position = new Vector2(0f, 3f);
+            obstacle.Rigidbody.velocity = Vector2.zero;
+            Physics2D.SyncTransforms();
+            yield return new WaitForFixedUpdate();
+            yield return MoveBodyInto(obstacle.Rigidbody, new Vector2(0f, -8f), 30);
+            Assert.That(filledCount, Is.EqualTo(1));
+        }
+
+        [UnityTest]
+        public IEnumerator FirstAttackStrike_PublishesOnceAcrossLaterStrikes()
+        {
+            Demo2SimulationController simulationController = CreateSimulationController();
+            PlayerMoveController player = CreatePlayer(simulationController);
+            int strikeCount = 0;
+            player.AttackStrikeStarted += () => strikeCount++;
+            Mouse mouse = InputSystem.AddDevice<Mouse>();
+            _createdDevices.Add(mouse);
+            yield return null;
+
+            InputSystem.QueueStateEvent(mouse, default(MouseState).WithButton(MouseButton.Left));
+            float elapsed = 0f;
+            while (elapsed < 0.45f && strikeCount == 0)
+            {
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+
+            Assert.That(strikeCount, Is.EqualTo(1));
+            InputSystem.QueueStateEvent(mouse, default(MouseState));
+            yield return new WaitForSeconds(0.9f);
+
+            InputSystem.QueueStateEvent(mouse, default(MouseState).WithButton(MouseButton.Left));
+            yield return new WaitForSeconds(0.4f);
+            Assert.That(strikeCount, Is.EqualTo(1));
+        }
+
 
 
         private Demo2SimulationController CreateSimulationController()
@@ -262,6 +362,17 @@ namespace Spotlight.Tests.PlayMode
             boxObject.transform.position = position;
             return boxObject.AddComponent<BoxCollider2D>();
         }
+        private static IEnumerator MoveBodyInto(Rigidbody2D body, Vector2 velocity, int steps)
+        {
+            body.velocity = velocity;
+            for (int step = 0; step < steps; step++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            body.velocity = Vector2.zero;
+        }
+
 
 
         private GameObject CreateObject(string name)

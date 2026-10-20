@@ -1,10 +1,13 @@
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using Spotlight.Audio;
 using Spotlight.Demos.Demo1;
+using Spotlight.Demos.Demo2;
 using Spotlight.Save;
 using Spotlight.Scene;
+using Spotlight.Story;
 
 namespace Spotlight.Bootstrap
 {
@@ -17,11 +20,16 @@ namespace Spotlight.Bootstrap
         private SaveService _saveService;
         private SceneLoader _sceneLoader;
         private AudioManager _audioManager;
+        private StoryDemoBridge _storyBridge;
+        private StorySessionHost _storyHost;
         private bool _ownsServices;
+        private bool _holdOwnedEventSystem;
+        private StoryDialogueView _placedStoryView;
 
         public SaveService SaveService => _saveService;
         public SceneLoader SceneLoader => _sceneLoader;
         public AudioManager AudioManager => _audioManager;
+        public StorySessionHost StoryHost => _storyHost;
         public bool IsInitialized { get; private set; }
 
         private void Awake()
@@ -46,6 +54,14 @@ namespace Spotlight.Bootstrap
             if (_ownsServices && IsInitialized)
             {
                 SceneManager.sceneLoaded -= OnSceneLoaded;
+                SceneManager.sceneUnloaded -= OnSceneUnloaded;
+                if (_sceneLoader != null)
+                {
+                    _sceneLoader.BeforeLoad -= DisableOwnedEventSystem;
+                    _sceneLoader.BeforeLoad -= ReclaimStoryCanvas;
+                    _sceneLoader.LoadAborted -= OnSceneLoadAborted;
+                    _sceneLoader.LoadAborted -= RestoreStoryCanvasAfterAbort;
+                }
             }
         }
 
@@ -63,6 +79,14 @@ namespace Spotlight.Bootstrap
             {
                 _saveService = new SaveService();
                 _sceneLoader = new SceneLoader(new SceneCatalog());
+                _storyBridge = new StoryDemoBridge();
+                _storyHost = GetComponent<StorySessionHost>();
+                if (_storyHost == null)
+                {
+                    _storyHost = gameObject.AddComponent<StorySessionHost>();
+                }
+
+                _storyHost.Initialize(_sceneLoader, _storyBridge);
                 AudioSource musicSource = GetComponent<AudioSource>();
                 if (musicSource == null)
                 {
@@ -70,18 +94,35 @@ namespace Spotlight.Bootstrap
                 }
 
                 _audioManager = new AudioManager(musicSource);
+                _sceneLoader.BeforeLoad += DisableOwnedEventSystem;
+                _sceneLoader.BeforeLoad += ReclaimStoryCanvas;
+                _sceneLoader.LoadAborted += OnSceneLoadAborted;
+                _sceneLoader.LoadAborted += RestoreStoryCanvasAfterAbort;
                 SceneManager.sceneLoaded += OnSceneLoaded;
+                SceneManager.sceneUnloaded += OnSceneUnloaded;
                 IsInitialized = true;
                 DontDestroyOnLoad(gameObject);
                 InjectSceneEntry(gameObject.scene);
+                HideOwnedStoryCanvas();
                 return true;
             }
             catch (Exception exception)
             {
                 SceneManager.sceneLoaded -= OnSceneLoaded;
+                SceneManager.sceneUnloaded -= OnSceneUnloaded;
+                if (_sceneLoader != null)
+                {
+                    _sceneLoader.BeforeLoad -= DisableOwnedEventSystem;
+                    _sceneLoader.BeforeLoad -= ReclaimStoryCanvas;
+                    _sceneLoader.LoadAborted -= OnSceneLoadAborted;
+                    _sceneLoader.LoadAborted -= RestoreStoryCanvasAfterAbort;
+                }
+
                 _saveService = null;
                 _sceneLoader = null;
                 _audioManager = null;
+                _storyBridge = null;
+                _storyHost = null;
                 Debug.LogError("SessionRoot 初始化失败：" + exception.Message, this);
                 return false;
             }
@@ -109,8 +150,29 @@ namespace Spotlight.Bootstrap
             InjectSceneEntry(scene);
         }
 
+        private void OnSceneUnloaded(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (_holdOwnedEventSystem)
+            {
+                return;
+            }
+
+            KeepSingleEventSystem();
+        }
+
         private void InjectSceneEntry(UnityEngine.SceneManagement.Scene scene)
         {
+            _holdOwnedEventSystem = false;
+            KeepSingleEventSystem();
+            BindStoryViews(scene);
+            BindDemo2Story(scene);
+            if (scene.name == "Hub")
+            {
+                _storyHost?.StartStory();
+            }
+
+            PlaceStoryCanvas(scene);
+
             GameObject[] rootObjects = scene.GetRootGameObjects();
             Demo1SceneEntry selectedEntry = null;
 
@@ -132,10 +194,212 @@ namespace Spotlight.Bootstrap
             }
 
             if (selectedEntry != null
-                && !selectedEntry.Initialize(_sceneLoader, _audioManager))
+                && !selectedEntry.Initialize(_sceneLoader, _audioManager, _storyBridge))
             {
                 Debug.LogError("Demo1 场景入口初始化失败。", selectedEntry);
             }
+        }
+
+        /// <summary>
+        /// SessionRoot 的 EventSystem 要跨场景保住剧情点击。目标场景自己已有一份时关掉它，避免控制台报两个 EventSystem。
+        /// 必须在 LoadSceneAsync 之前关掉，因为新场景的 EventSystem 会先 OnEnable。
+        /// </summary>
+        private void KeepSingleEventSystem()
+        {
+            if (_holdOwnedEventSystem)
+            {
+                SetOwnedEventSystemEnabled(false);
+                return;
+            }
+
+            EventSystem owned = GetComponentInChildren<EventSystem>(true);
+            if (owned == null)
+            {
+                return;
+            }
+
+            bool sceneHasAnother = false;
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                UnityEngine.SceneManagement.Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.isLoaded || scene == gameObject.scene)
+                {
+                    continue;
+                }
+
+                GameObject[] roots = scene.GetRootGameObjects();
+                for (int index = 0; index < roots.Length; index++)
+                {
+                    EventSystem[] systems = roots[index].GetComponentsInChildren<EventSystem>(true);
+                    for (int systemIndex = 0; systemIndex < systems.Length; systemIndex++)
+                    {
+                        if (systems[systemIndex] != owned)
+                        {
+                            sceneHasAnother = true;
+                            break;
+                        }
+                    }
+
+                    if (sceneHasAnother)
+                    {
+                        break;
+                    }
+                }
+
+                if (sceneHasAnother)
+                {
+                    break;
+                }
+            }
+            SetOwnedEventSystemEnabled(!sceneHasAnother);
+        }
+
+        private void OnSceneLoadAborted()
+        {
+            _holdOwnedEventSystem = false;
+            KeepSingleEventSystem();
+        }
+
+        private void DisableOwnedEventSystem()
+        {
+            _holdOwnedEventSystem = true;
+            SetOwnedEventSystemEnabled(false);
+        }
+
+        private void SetOwnedEventSystemEnabled(bool enabled)
+        {
+            EventSystem owned = GetComponentInChildren<EventSystem>(true);
+            if (owned == null)
+            {
+                return;
+            }
+
+            owned.enabled = enabled;
+            BaseInputModule module = owned.GetComponent<BaseInputModule>();
+            if (module != null)
+            {
+                module.enabled = enabled;
+            }
+        }
+
+        private void BindStoryViews(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (_storyHost == null)
+            {
+                return;
+            }
+
+            GameObject[] rootObjects = scene.GetRootGameObjects();
+            for (int index = 0; index < rootObjects.Length; index++)
+            {
+                StoryViewEntry[] entries = rootObjects[index].GetComponentsInChildren<StoryViewEntry>(true);
+                for (int entryIndex = 0; entryIndex < entries.Length; entryIndex++)
+                {
+                    entries[entryIndex].Bind(_storyHost);
+                }
+            }
+        }
+
+        private static bool HostsDialogue(string sceneName)
+        {
+            return sceneName == "Hub" || sceneName == "demo1" || sceneName == "demo2" || sceneName == "demo2_act1";
+        }
+
+        private void ReclaimStoryCanvas()
+        {
+            if (_placedStoryView == null)
+            {
+                return;
+            }
+
+            _placedStoryView.gameObject.SetActive(false);
+            _placedStoryView.transform.SetParent(transform, false);
+            _placedStoryView = null;
+        }
+
+        private void RestoreStoryCanvasAfterAbort()
+        {
+            PlaceStoryCanvas(SceneManager.GetActiveScene());
+        }
+
+        private void PlaceStoryCanvas(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (_storyHost == null || !scene.IsValid() || !scene.isLoaded || !HostsDialogue(scene.name))
+            {
+                return;
+            }
+
+            if (SceneHasDialogue(scene))
+            {
+                return;
+            }
+
+            StoryDialogueView view = GetComponentInChildren<StoryDialogueView>(true);
+            if (view == null)
+            {
+                return;
+            }
+
+            view.transform.SetParent(null, false);
+            SceneManager.MoveGameObjectToScene(view.gameObject, scene);
+            _placedStoryView = view;
+            view.GetComponent<StoryViewEntry>()?.Bind(_storyHost);
+            view.gameObject.SetActive(true);
+        }
+
+        private static bool SceneHasDialogue(UnityEngine.SceneManagement.Scene scene)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int index = 0; index < roots.Length; index++)
+            {
+                if (roots[index].GetComponentInChildren<StoryDialogueView>(true) != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void HideOwnedStoryCanvas()
+        {
+            StoryDialogueView view = GetComponentInChildren<StoryDialogueView>(true);
+            if (view != null)
+            {
+                view.gameObject.SetActive(false);
+            }
+        }
+
+        private void BindDemo2Story(UnityEngine.SceneManagement.Scene scene)
+        {
+            if (_storyHost == null || !scene.IsValid() || !scene.isLoaded)
+            {
+                return;
+            }
+
+            GameObject[] rootObjects = scene.GetRootGameObjects();
+            Demo2SimulationController simulation = null;
+            for (int index = 0; index < rootObjects.Length; index++)
+            {
+                simulation = rootObjects[index].GetComponentInChildren<Demo2SimulationController>(true);
+                if (simulation != null)
+                {
+                    break;
+                }
+            }
+
+            if (simulation == null)
+            {
+                return;
+            }
+
+            Demo2StoryRelay relay = simulation.GetComponent<Demo2StoryRelay>();
+            if (relay == null)
+            {
+                relay = simulation.gameObject.AddComponent<Demo2StoryRelay>();
+            }
+
+            relay.Bind(_storyHost);
         }
     }
 }

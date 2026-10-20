@@ -34,6 +34,7 @@ namespace Spotlight.Demos.Demo2
         private Demo2TreeStateMachine _stateMachine;
         private Coroutine _animationRoutine;
         private bool _isConfigured;
+        private bool _hasReportedBiteStarted;
 
         /// <summary>
         /// 树首次成功进入发芽阶段的事实通知。
@@ -54,6 +55,11 @@ namespace Spotlight.Demos.Demo2
         /// 最终成长动画已经完成的事实通知。
         /// </summary>
         public event Action GrowthCompleted;
+        /// <summary>
+        /// 第一名攻击者开始啃食的事实。重复登记和后续攻击者不会再次发布。
+        /// </summary>
+        public event Action BiteStarted;
+
 
         /// <summary>
         /// 当前树生命周期阶段。
@@ -64,6 +70,7 @@ namespace Spotlight.Demos.Demo2
         /// 当前累计啃食秒数。
         /// </summary>
         public float AccumulatedBiteSeconds => _stateMachine?.AccumulatedBiteSeconds ?? 0f;
+
 
         private void Awake()
         {
@@ -177,7 +184,18 @@ namespace Spotlight.Demos.Demo2
         /// </summary>
         public bool RegisterAttacker(UnityEngine.Object attacker)
         {
-            return _isConfigured && attacker != null && _activeAttackers.Add(attacker);
+            if (!_isConfigured || attacker == null || !_activeAttackers.Add(attacker))
+            {
+                return false;
+            }
+
+            if (!_hasReportedBiteStarted)
+            {
+                _hasReportedBiteStarted = true;
+                BiteStarted?.Invoke();
+            }
+
+            return true;
         }
 
         /// <summary>

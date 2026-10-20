@@ -11,7 +11,7 @@ namespace Spotlight.Bootstrap
     [DefaultExecutionOrder(100)]
     public sealed class BootstrapEntry : MonoBehaviour
     {
-        [SerializeField] private string _initialSceneId = SceneCatalog.Demo1;
+        [SerializeField] private string _initialSceneId = SceneCatalog.Hub;
 
         private SessionRoot _sessionRoot;
 

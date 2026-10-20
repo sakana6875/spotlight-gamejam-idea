@@ -12,6 +12,15 @@ namespace Spotlight.Scene
         private readonly SceneCatalog _sceneCatalog;
 
         /// <summary>
+        /// 真正调用 LoadSceneAsync 之前通知。新场景的 EventSystem 会在 sceneLoaded 之前 OnEnable。
+        /// </summary>
+        public event Action BeforeLoad;
+
+        /// <summary>
+        /// LoadSceneAsync 没有开始时通知，方便把加载前关掉的 EventSystem 开回来。
+        /// </summary>
+        public event Action LoadAborted;
+        /// <summary>
         /// 使用组合根提供的稳定场景映射创建加载器。
         /// </summary>
         public SceneLoader(SceneCatalog sceneCatalog)
@@ -43,9 +52,11 @@ namespace Spotlight.Scene
 
             try
             {
+                BeforeLoad?.Invoke();
                 AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
                 if (operation == null)
                 {
+                    LoadAborted?.Invoke();
                     Debug.LogError("场景加载失败：Unity 未接受稳定场景 ID：" + sceneId);
                     return SceneLoadResult.FailedToStart;
                 }
@@ -54,6 +65,7 @@ namespace Spotlight.Scene
             }
             catch (Exception exception)
             {
+                LoadAborted?.Invoke();
                 Debug.LogError("场景加载失败：" + sceneId + "；原因：" + exception.Message);
                 return SceneLoadResult.FailedToStart;
             }

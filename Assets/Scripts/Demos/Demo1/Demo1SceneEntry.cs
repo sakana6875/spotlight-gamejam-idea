@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Spotlight.Demos.Demo1.Application;
 using Spotlight.Scene;
+using Spotlight.Story;
 
 namespace Spotlight.Demos.Demo1
 {
@@ -15,6 +16,7 @@ namespace Spotlight.Demos.Demo1
 
         private SceneLoader _sceneLoader;
         private IMusicPlaybackService _musicPlaybackService;
+        private StoryDemoBridge _storyBridge;
 
         public bool IsInitialized { get; private set; }
 
@@ -23,7 +25,8 @@ namespace Spotlight.Demos.Demo1
         /// </summary>
         public bool Initialize(
             SceneLoader sceneLoader,
-            IMusicPlaybackService musicPlaybackService)
+            IMusicPlaybackService musicPlaybackService,
+            StoryDemoBridge storyBridge)
         {
             if (sceneLoader == null)
             {
@@ -53,15 +56,24 @@ namespace Spotlight.Demos.Demo1
             _musicPlaybackService = musicPlaybackService;
             _flowController.Initialize(_sceneLoader);
 
-            if (!_gameplayAssembler.Initialize(
-                    _musicPlaybackService,
-                    () => { _flowController.ReturnToSampleScene(); }))
+            _storyBridge = storyBridge;
+            if (!_gameplayAssembler.Initialize(_musicPlaybackService, OnRunFinished))
             {
                 return false;
             }
 
             IsInitialized = true;
             return true;
+        }
+
+        private void OnRunFinished(int finalHeight)
+        {
+            if (_storyBridge != null && _storyBridge.TryCompleteDemo1(finalHeight))
+            {
+                return;
+            }
+
+            _flowController.ReturnToSampleScene();
         }
     }
 }

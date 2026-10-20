@@ -74,6 +74,7 @@ namespace Spotlight.Demos.Demo2
         private Vector2Int _facingDirection = Vector2Int.right;
         private bool _isConfigured;
         private bool _isAnimatorConfigured;
+        private bool _hasReportedAttackStrike;
         private Demo2PlayerState _appliedAnimatorState = (Demo2PlayerState)(-1);
         private Demo2ViewMode _viewMode = Demo2ViewMode.Side;
         private TopMovementAxis _topMovementAxis = TopMovementAxis.Horizontal;
@@ -112,6 +113,11 @@ namespace Spotlight.Demos.Demo2
         /// 玩家移动规则已经切换到指定视图模式的事实通知。
         /// </summary>
         public event Action<Demo2ViewMode> ViewModeChanged;
+        /// <summary>
+        /// 玩家第一次打出第一段攻击命中时刻的事实。第二段攻击不会重复发布。
+        /// </summary>
+        public event Action AttackStrikeStarted;
+
 
         private void Awake()
         {
@@ -119,6 +125,7 @@ namespace Spotlight.Demos.Demo2
             _animator = GetComponent<Animator>();
             _input = new GameInputActions();
             _playerStateMachine = new Demo2PlayerStateMachine();
+
             _pipeCarryController = GetComponent<Demo2PipeCarryController>();
 
             if (_rigidbody == null || _animator == null || _groundCheck == null || _meleeAttack == null)
@@ -185,6 +192,12 @@ namespace Spotlight.Demos.Demo2
             Demo2PlayerAdvanceResult advanceResult =
                 _playerStateMachine.Advance(Time.deltaTime, isMoving, attackPressed);
             ApplyAnimatorState();
+            if (advanceResult == Demo2PlayerAdvanceResult.Attack1Strike && !_hasReportedAttackStrike)
+            {
+                _hasReportedAttackStrike = true;
+                AttackStrikeStarted?.Invoke();
+            }
+
             if (advanceResult != Demo2PlayerAdvanceResult.None)
             {
                 _meleeAttack.ResolveStrike();

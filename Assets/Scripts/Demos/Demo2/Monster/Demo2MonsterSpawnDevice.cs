@@ -34,6 +34,8 @@ namespace Spotlight.Demos.Demo2
         private bool _hasStarted;
         private bool _isSpawnDue;
         private bool _hasCompleted;
+        private bool _hasReportedFirstSpawn;
+
 
         /// <summary>
         /// 当前装置已经成功生成的怪物数量。
@@ -49,6 +51,11 @@ namespace Spotlight.Demos.Demo2
         /// 配置数量全部生成且全部死亡时发布的一次性事实。
         /// </summary>
         public event Action WaveCompleted;
+        /// <summary>
+        /// 本装置第一次成功生成怪物的事实。出生点被挡住时不会提前发布。
+        /// </summary>
+        public event Action FirstMonsterSpawned;
+
 
         private void Awake()
         {
@@ -174,6 +181,12 @@ namespace Spotlight.Demos.Demo2
             _spawnedCount++;
             _elapsedSeconds = 0f;
             _isSpawnDue = false;
+            if (!_hasReportedFirstSpawn)
+            {
+                _hasReportedFirstSpawn = true;
+                FirstMonsterSpawned?.Invoke();
+            }
+
         }
 
         private void HandleMonsterDied(IMonster deadMonster)

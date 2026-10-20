@@ -35,7 +35,7 @@ namespace Spotlight.Demos.Demo1
         /// <summary>
         /// 创建本局规则对象并以实际 DSP 起点启动歌曲时钟。
         /// </summary>
-        public bool Initialize(IMusicPlaybackService musicPlaybackService, Action onReturn)
+        public bool Initialize(IMusicPlaybackService musicPlaybackService, Action<int> onReturn)
         {
             if (IsInitialized)
             {
@@ -79,9 +79,11 @@ namespace Spotlight.Demos.Demo1
                     heightCalculator,
                     eventBus);
 
+                int finalHeight = 0;
+                eventBus.Subscribe<DemoOneCompletedEvent>(completed => finalHeight = completed.FinalHeight);
                 _playerVisual.Initialize(eventBus);
                 _judgmentLineVisual.Initialize(eventBus);
-                _uiAdapter.Initialize(eventBus, controller.State, onReturn);
+                _uiAdapter.Initialize(eventBus, controller.State, () => onReturn(finalHeight));
 
                 double scheduledDspTime = AudioSettings.dspTime + _leadInSeconds;
                 double actualStartDspTime = musicPlaybackService.PlayMusicAtDspTime(

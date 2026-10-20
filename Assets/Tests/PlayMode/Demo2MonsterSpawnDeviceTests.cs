@@ -122,6 +122,64 @@ namespace Spotlight.Tests.PlayMode
             Assert.That(firstDevice.SpawnedCount, Is.EqualTo(1));
             Assert.That(secondDevice.SpawnedCount, Is.EqualTo(2));
         }
+        [UnityTest]
+        public IEnumerator BlockedSpawn_DoesNotPublishFirstMonsterUntilFirstSuccess()
+        {
+            Demo2SimulationController simulation = CreateObject("Simulation")
+                .AddComponent<Demo2SimulationController>();
+            Demo2TreeController tree = CreateTree(new Vector2(5f, 0f));
+            Transform spawnedRoot;
+            Demo2MonsterSpawnDevice device = CreateDevice(
+                "FactDevice",
+                Vector2.zero,
+                2,
+                0.05f,
+                tree,
+                simulation,
+                out spawnedRoot);
+            int spawnedFactCount = 0;
+            device.FirstMonsterSpawned += () => spawnedFactCount++;
+            BoxCollider2D blocker = CreateObject("SpawnBlocker").AddComponent<BoxCollider2D>();
+            blocker.transform.position = Vector2.zero;
+            Physics2D.SyncTransforms();
+
+            Assert.That(tree.BeginSprouting(), Is.EqualTo(Demo2TreeTransitionResult.Succeeded));
+            yield return null;
+            Assert.That(device.SpawnedCount, Is.Zero);
+            Assert.That(spawnedFactCount, Is.Zero);
+
+            Object.Destroy(blocker.gameObject);
+            yield return null;
+            yield return null;
+            Assert.That(device.SpawnedCount, Is.EqualTo(1));
+            Assert.That(spawnedFactCount, Is.EqualTo(1));
+
+            yield return new WaitForSeconds(0.12f);
+            Assert.That(device.SpawnedCount, Is.EqualTo(2));
+            Assert.That(spawnedFactCount, Is.EqualTo(1));
+            Assert.That(spawnedRoot.childCount, Is.EqualTo(2));
+        }
+
+        [UnityTest]
+        public IEnumerator RepeatedAttacker_PublishesBiteStartedOnce()
+        {
+            Demo2TreeController tree = CreateTree(Vector2.zero);
+            int biteCount = 0;
+            tree.BiteStarted += () => biteCount++;
+            GameObject firstAttacker = CreateObject("FirstAttacker");
+            GameObject secondAttacker = CreateObject("SecondAttacker");
+
+            Assert.That(tree.RegisterAttacker(null), Is.False);
+            Assert.That(biteCount, Is.Zero);
+            Assert.That(tree.RegisterAttacker(firstAttacker), Is.True);
+            Assert.That(biteCount, Is.EqualTo(1));
+            Assert.That(tree.RegisterAttacker(firstAttacker), Is.False);
+            Assert.That(biteCount, Is.EqualTo(1));
+            Assert.That(tree.RegisterAttacker(secondAttacker), Is.True);
+            Assert.That(biteCount, Is.EqualTo(1));
+            yield return null;
+        }
+
 
         [UnityTearDown]
         public IEnumerator TearDown()

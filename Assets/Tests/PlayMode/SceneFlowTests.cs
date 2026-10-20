@@ -18,6 +18,10 @@ namespace Spotlight.Tests.PlayMode
             Assert.That(sampleSceneName, Is.EqualTo("SampleScene"));
             Assert.That(catalog.TryGetSceneName(SceneCatalog.Demo2, out string demo2SceneName), Is.True);
             Assert.That(demo2SceneName, Is.EqualTo("demo2"));
+            Assert.That(catalog.TryGetSceneName(SceneCatalog.Demo2Act1, out string act1SceneName), Is.True);
+            Assert.That(act1SceneName, Is.EqualTo("demo2_act1"));
+            Assert.That(catalog.TryGetSceneId("demo2_act1", out string act1SceneId), Is.True);
+            Assert.That(act1SceneId, Is.EqualTo(SceneCatalog.Demo2Act1));
         }
 
         [UnityTest]

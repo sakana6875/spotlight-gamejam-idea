@@ -16,11 +16,18 @@ namespace Spotlight.Demos.Demo2
         private bool[] _wetStates;
         private bool _isConfigured;
         private bool _isDirty;
+        private bool _hasReportedPuzzleCompleted;
+
 
         /// <summary>
         /// Slot占用或通水状态改变时发布的事实。
         /// </summary>
         public event Action<Demo2Act1PipeSlotChangedEvent> SlotChanged;
+        /// <summary>
+        /// 全部稳定Slot都已放入正确管段且浸湿的一次性事实。
+        /// </summary>
+        public event Action PuzzleCompleted;
+
 
         public bool IsConfigured => _isConfigured;
 
@@ -166,6 +173,21 @@ namespace Spotlight.Demos.Demo2
                 _wetStates[slotIndex] = isWet;
                 SlotChanged?.Invoke(new Demo2Act1PipeSlotChangedEvent(slot.SlotId, isOccupied, isWet));
             }
+            if (_hasReportedPuzzleCompleted)
+            {
+                return;
+            }
+
+            for (int index = 0; index < _slots.Length; index++)
+            {
+                if (!_occupiedStates[index] || !_wetStates[index])
+                {
+                    return;
+                }
+            }
+
+            _hasReportedPuzzleCompleted = true;
+            PuzzleCompleted?.Invoke();
         }
 
         private int FindSlotIndex(string slotId)

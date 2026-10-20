@@ -1,3 +1,4 @@
+using System;
 using Spotlight.Input;
 using UnityEngine;
 
@@ -24,7 +25,14 @@ namespace Spotlight.Demos.Demo2
         private PlayerMoveController _playerMoveController;
         private Collider2D _playerCollider;
         private GameInputActions _input;
+        private bool _hasReportedPushStarted;
+
         private bool _isConfigured;
+        /// <summary>
+        /// 本次组件生命周期内第一次成功推动障碍物的事实。
+        /// </summary>
+        public event Action PushStarted;
+
 
         private void Awake()
         {
@@ -101,6 +109,12 @@ namespace Spotlight.Demos.Demo2
                     .GetComponentInParent<Demo2PushableObstacle>();
                 if (obstacle != null && obstacle.TryPush(horizontalDirection))
                 {
+                    if (!_hasReportedPushStarted)
+                    {
+                        _hasReportedPushStarted = true;
+                        PushStarted?.Invoke();
+                    }
+
                     return true;
                 }
             }
