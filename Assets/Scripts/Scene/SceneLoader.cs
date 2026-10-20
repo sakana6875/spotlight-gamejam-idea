@@ -20,7 +20,7 @@ namespace Spotlight.Scene
         }
 
         /// <summary>
-        /// 请求加载稳定 ID 对应的场景，并返回 Unity 是否接受该请求。
+        /// 请求加载稳定 ID 对应的 Build Settings 场景，并返回请求是否已被 Unity 接受。
         /// </summary>
         public SceneLoadResult LoadScene(string sceneId)
         {
@@ -37,7 +37,7 @@ namespace Spotlight.Scene
 
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
-                Debug.LogError("场景加载失败：场景不在 Build Settings 中：" + sceneName);
+                Debug.LogError("场景加载失败：稳定场景 ID 未映射到 Build Settings 场景：" + sceneId);
                 return SceneLoadResult.FailedToStart;
             }
 
@@ -46,7 +46,7 @@ namespace Spotlight.Scene
                 AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
                 if (operation == null)
                 {
-                    Debug.LogError("场景加载失败：Unity 未接受加载请求：" + sceneName);
+                    Debug.LogError("场景加载失败：Unity 未接受稳定场景 ID：" + sceneId);
                     return SceneLoadResult.FailedToStart;
                 }
 
@@ -54,9 +54,10 @@ namespace Spotlight.Scene
             }
             catch (Exception exception)
             {
-                Debug.LogError("场景加载失败：" + sceneName + "；原因：" + exception.Message);
+                Debug.LogError("场景加载失败：" + sceneId + "；原因：" + exception.Message);
                 return SceneLoadResult.FailedToStart;
             }
         }
     }
+
 }

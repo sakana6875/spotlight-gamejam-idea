@@ -99,6 +99,16 @@ namespace Spotlight.Demos.Demo1.Adapters
 
         private void OnCompleted(DemoOneCompletedEvent eventData)
         {
+            if (_scoreText != null)
+            {
+                _scoreText.gameObject.SetActive(false);
+            }
+
+            if (_judgmentPopupText != null)
+            {
+                _judgmentPopupText.gameObject.SetActive(false);
+            }
+
             if (_resultPanel != null)
             {
                 _resultPanel.SetActive(true);
@@ -106,23 +116,23 @@ namespace Spotlight.Demos.Demo1.Adapters
 
             if (_finalHeightText != null)
             {
-                _finalHeightText.text = $"{eventData.FinalHeight} m";
+                _finalHeightText.text = $"Height {eventData.FinalHeight} m";
             }
 
             if (_perfectHeightText != null)
             {
-                _perfectHeightText.text = $"{eventData.PerfectHeight} m";
+                _perfectHeightText.text = $"Perfect Height {eventData.PerfectHeight} m";
             }
 
             if (_resultScoreText != null)
             {
-                _resultScoreText.text = $"{eventData.Score} / {eventData.MaxScore}";
+                _resultScoreText.text = $"Score {eventData.Score} / {eventData.MaxScore}";
             }
 
             if (_resultCountsText != null)
             {
                 _resultCountsText.text =
-                    $"Perfect {eventData.PerfectCount}  Good {eventData.GoodCount}  Miss {eventData.MissCount}";
+                    $"Perfect {eventData.PerfectCount}    Good {eventData.GoodCount}    Miss {eventData.MissCount}";
             }
         }
 

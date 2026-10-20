@@ -4,6 +4,7 @@
     "references": [
         "Spotlight.Domain",
         "Unity.InputSystem",
+        "Cinemachine",
         "Unity.TextMeshPro"
     ],
     "includePlatforms": [],

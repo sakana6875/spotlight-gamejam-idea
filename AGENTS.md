@@ -14,59 +14,63 @@
 
 `Bootstrap / SessionRoot` 是唯一组合根。
 
-- 只有组合根创建全局服务的具体实现并组装依赖。
-- 服务通过接口注入到场景适配器和玩法模块。
+- 只有组合根创建跨场景服务的具体实现并组装依赖。
+- 服务通过明确引用、初始化参数或构造器注入到场景入口和玩法模块；只有存在真实替换需求或外部边界时才引入接口。
 - 其他模块不得自行查找、创建或替换全局服务。
 - 禁止使用跨模块业务静态单例。
 - 允许无状态纯函数、只读常量和由组合根持有的实例。
 
-### 2.2 分层和依赖方向
+### 2.2 目录、分层和依赖方向
 
-推荐目录结构：
+当前推荐目录结构：
 
 ```text
 Assets/
 ├── Scripts/
-│   ├── Architecture/
-│   │   ├── Contracts/
-│   │   ├── Domain/
-│   │   ├── Application/
-│   │   └── Adapters/
-│   └── Features/
-│       ├── Demo1/
-│       ├── Demo2/
-│       ├── Demo3/
-│       └── ChaosDemo/
+│   ├── Bootstrap/
+│   │   ├── SessionRoot.cs
+│   │   └── SessionSmokeEntry.cs
+│   ├── Domain/
+│   │   └── Save/
+│   ├── Save/
+│   │   └── SaveService.cs
+│   ├── Scene/
+│   │   └── SceneLoader.cs
+│   ├── Demos/
+│   │   └── Demo2/
+│   └── Spotlight.Game.asmdef
 ├── Tests/
 │   ├── EditMode/
 │   └── PlayMode/
 └── Data/
 ```
 
-依赖方向必须保持：
+目录职责必须保持：
 
 ```text
-Adapters → Application → Domain ← Data
-Features → Contracts/Domain/Application
-UI、Audio、Save、Scene → Contracts/Ports
+Bootstrap → Save / Scene / Domain
+Save      → Domain
+Scene     → Unity SceneManagement
+Demos     → Save / Scene / Domain / Unity 组件
+Domain    → 无 Unity 依赖
 ```
 
-- `Domain` 只包含领域规则、值对象、状态和 Ports，不依赖 Unity 场景对象、UI、AudioSource、SceneManager 或具体存档实现。
-- `Application` 包含用例协调、流程和状态机，不直接依赖具体 UI、Audio、场景对象或 MonoBehaviour。
-- `Adapters` 实现 Unity、场景、输入、碰撞、UI、音频和存档等外部适配。
-- `Features` 的玩法代码只能依赖契约和领域数据，不得依赖其他 Feature 的具体 MonoBehaviour。
-- 需要结果的操作使用明确接口命令；只表达已发生事实的状态变化使用类型化领域事件。
-- EventBus 只能负责发布、订阅和解除订阅，不得持有业务逻辑。
+- `Domain` 只包含纯 C# 规则、值对象、状态和可序列化数据，不依赖 Unity 场景对象、UI、AudioSource、SceneManager 或具体 MonoBehaviour。
+- `Bootstrap` 只负责启动、跨场景生命周期和当前真实服务组装，不承载菜单、Demo、存档合并或玩法规则。
+- `Save` 实现当前真实存档和永久进度服务；没有文件持久化前不得伪装成可靠磁盘存档。
+- `Scene` 是唯一允许封装 `SceneManager` 场景加载的运行时代码位置；普通玩法不得直接调用 `SceneManager`。
+- `Demos` 存放真实 Demo 玩法。普通 Feature 可以靠近场景和 MonoBehaviour，只要职责清楚、易读、没有跨 Feature 具体实现依赖。
+- 不保留没有真实调用方的 `Architecture/Application`、`Architecture/Adapters`、`Architecture/Composition`、`Architecture/Contracts` 或空 `Features` 目录。
+- 需要结果的操作使用明确返回值、结果对象或枚举；只表达已发生事实的状态变化才使用类型化领域事件。
+- EventBus 只能在出现真实跨对象事实通知需求后引入，且只负责发布、订阅和解除订阅，不得持有业务逻辑。
 
 ### 2.3 程序集
 
-必须使用程序集定义（asmdef）保护依赖边界。第一阶段采用以下程序集，后续只有在有明确边界时才增加：
+必须使用程序集定义（asmdef）保护仍有价值的依赖边界。当前生产程序集为：
 
 ```text
 Spotlight.Domain
-Spotlight.Application
-Spotlight.Adapters
-Spotlight.Features.*
+Spotlight.Game
 Spotlight.Tests.EditMode
 Spotlight.Tests.PlayMode
 ```
@@ -74,7 +78,9 @@ Spotlight.Tests.PlayMode
 规则：
 
 - `Spotlight.Domain` 不引用 Unity 场景相关程序集。
-- `Spotlight.Application` 不引用具体适配器程序集。
+- `Spotlight.Game` 可引用 `Spotlight.Domain` 和 Unity，承载 Bootstrap、Save、Scene、Demos、UI 和 Data。
+- 当前不保留独立的 `Spotlight.Application`、`Spotlight.Adapters` 或空的 `Spotlight.Features.*` 程序集。
+- 只有出现明确独立编译隔离需求或真实模块边界时，才新增 Feature 程序集。
 - 测试程序集只引用被测试的程序集和必要的 Unity Test Framework。
 - 禁止程序集循环引用。
 - `.asmdef` 和对应 `.meta` 文件必须提交。
@@ -97,7 +103,7 @@ MonoBehaviour 只负责 Unity 生命周期和外部适配：
 - 碰撞、触发和物理桥接；
 - Animator、Particle、Camera、UI 和 AudioSource 操作；
 - 场景加载回调；
-- 将 Unity 事件转换为 Ports 调用或领域事件。
+- 将 Unity 事件转换为明确服务调用或领域事件。
 
 禁止把存档合并、阶段规则、节拍判定、进度推进等核心规则藏在 MonoBehaviour 中。
 
@@ -128,26 +134,26 @@ MonoBehaviour 只负责 Unity 生命周期和外部适配：
 示例：
 
 ```csharp
-public interface ICheckpointService
-{
-    SaveResult SaveCheckpoint(CheckpointData checkpoint);
-}
-
 public sealed class CheckpointManager
 {
-    private readonly ISaveService _saveService;
+    private readonly SaveService _saveService;
     private bool _isRestoring;
+
+    public CheckpointManager(SaveService saveService)
+    {
+        _saveService = saveService;
+    }
 }
 ```
 
 命名空间必须明确，不使用全局命名空间、`Common`、`Utils` 等无法表达职责的垃圾桶命名空间。推荐：
 
 ```text
+Spotlight.Bootstrap
 Spotlight.Domain
-Spotlight.Application
-Spotlight.Adapters
-Spotlight.Features.Demo1
-Spotlight.Features.Demo2
+Spotlight.Save
+Spotlight.Scene
+Spotlight.Demos.Demo2
 Spotlight.Tests.EditMode
 Spotlight.Tests.PlayMode
 ```
@@ -244,12 +250,12 @@ TODO 只能记录已确认的后续需求，不能用来掩盖未实现的必需
 
 验证按改动类型执行，不把“能编译”当作完整验证：
 
-- Domain/Application 规则：使用 EditMode NUnit 行为测试。
+- Domain 纯规则：使用 EditMode NUnit 行为测试。
 - 场景、Physics2D、AudioSource、SceneManager、实际 UI：使用 PlayMode 测试或可重复手动烟测。
 - 输入、音频、内容导入、存档和场景流程改动：必须验证对应运行时路径。
 - 每个新增核心规则至少覆盖一个边界或失败分支。
 - 测试行为输入和输出，不测试 MonoBehaviour 私有字段、Unity 序列化细节或实现内部调用次数。
-- 测试替身通过 Ports 注入，不使用具体场景对象或静态单例。
+- 测试替身只用于真实外部边界，不为不存在的端口提前创建记录型 fake。
 - 不为“有测试”而添加只断言不抛异常、长度大于零或内部字段复制的测试。
 
 最低验证范围包括：
@@ -292,9 +298,9 @@ UserSettings/
 完成一个功能改动时按以下顺序执行：
 
 1. 先读取相关项目状态、现有模式和调用点。
-2. 明确影响的层、程序集、资源和验证路径。
-3. 先修改 Ports、Domain 或数据契约，再实现 Application 和 Adapters。
-4. 保持每个改动可编译，避免跨层临时引用。
+2. 明确影响的目录、程序集、资源和验证路径。
+3. 先修改纯数据或 Domain 规则，再接入 Save、Scene、Bootstrap 或具体 Demo。
+4. 保持每个改动可编译，避免跨目录临时引用。
 5. 按改动类型运行针对性测试或实际烟测。
 6. 检查永久进度、场景生命周期、事件订阅和资源 `.meta` 是否完整。
 7. 删除已被新实现替代的旧路径，不保留无必要兼容别名、静态单例或重复入口。
@@ -420,7 +426,7 @@ test(domain): 增加永久进度合并测试
  
 ### 17.3 Editor 验证责任
  
-- 代码和纯 Domain/Application 测试由 Agent 完成。
+- 代码和纯 Domain 测试由 Agent 完成。
 - 场景、UI、音频、输入、物理和 PlayMode 验证通常由项目负责人在 Unity Editor 中完成。
 - Agent 未实际完成 Editor 验证时，必须明确标记“Editor 验证未完成”，不得声称场景或运行时行为已验证。
  

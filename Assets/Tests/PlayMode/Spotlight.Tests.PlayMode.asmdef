@@ -3,7 +3,9 @@
     "rootNamespace": "Spotlight.Tests.PlayMode",
     "references": [
         "Spotlight.Domain",
-        "Spotlight.Game"
+        "Spotlight.Game",
+        "Unity.InputSystem",
+        "Cinemachine"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

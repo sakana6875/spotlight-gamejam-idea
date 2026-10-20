@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using Spotlight.Demos.Demo1.Application;
 
@@ -8,10 +9,11 @@ namespace Spotlight.Demos.Demo1.Adapters
     /// </summary>
     public sealed class DemoOneRunnerBehaviour : MonoBehaviour
     {
-        private IDemoOneRunController _controller;
-        private SongClockAdapter _clock;
-        private IInputPulseReader _pulse;
-        private bool _isInitialized;
+        // 这些引用由运行时装配，不能进场景序列化。域重载会丢掉它们，但会保留普通 bool。
+        [NonSerialized] private IDemoOneRunController _controller;
+        [NonSerialized] private SongClockAdapter _clock;
+        [NonSerialized] private IInputPulseReader _pulse;
+        [NonSerialized] private bool _isInitialized;
 
         /// <summary>
         /// 绑定本局控制器、歌曲时钟和输入读取器。
@@ -21,9 +23,9 @@ namespace Spotlight.Demos.Demo1.Adapters
             SongClockAdapter clock,
             IInputPulseReader pulse)
         {
-            _controller = controller;
-            _clock = clock;
-            _pulse = pulse;
+            _controller = controller ?? throw new ArgumentNullException(nameof(controller));
+            _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+            _pulse = pulse ?? throw new ArgumentNullException(nameof(pulse));
             _isInitialized = true;
         }
 
