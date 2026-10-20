@@ -11,7 +11,8 @@ namespace Healing.Demo3.Adapters
     /// <summary>
     /// 大树场景根（Act3，枢纽场景）——第二幕跳完最后一朵蘑菇后进入。
     /// 第一次进入：男孩还在（HandholdFollower 牵手跟随女孩），玩家把两人牵进大树触发器 →
-    ///             渐黑 → 全黑中销毁男孩、只剩女孩 → 渐亮回来，留在枢纽场景自由行动；
+    ///             播送别演出（拖了 Tree Farewell 用全屏动画，屏幕盖严时男孩退场；否则渐黑中销毁男孩）
+    ///             → 只剩女孩，留在枢纽场景自由行动；
     /// 之后每次进入：男孩自动移除（只有女孩），按 Progress.EntryCount("Act3") 打日志区分幕次（结局分支用）。
     /// 自动走位区（Auto Walk Zones，可放任意多个）：玩家走进划定的区域 → 锁输入自动走到目标点
     /// （如大树出发点）→ 到达后可切场景（如 Act2-1 开始第三幕蘑菇跳跃）或只走位。
@@ -55,13 +56,20 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private float walkSpeed = 3f;
 
         [Header("大树收尾（仅第一次进入）")]
-        [Tooltip("大树触发器：空物体挂 BoxCollider2D（Is Trigger 勾上）放在大树位置——两人走进 → 渐黑 → 男孩销毁只剩女孩")]
+        [Tooltip("大树触发器：空物体挂 BoxCollider2D（Is Trigger 勾上）放在大树位置——两人走进 → 播送别演出（全屏动画或渐黑）→ 男孩退场只剩女孩")]
         [SerializeField] private Collider2D treeTrigger;
         [SerializeField] private CanvasGroup fadeToBlack;
         [SerializeField] private float treeFadeSeconds = 1.5f;      // 渐黑/渐亮时长
         [SerializeField] private float treeBlackHoldSeconds = 0.6f; // 全黑保持（男孩在此期间销毁）
         [Tooltip("进场时从黑场渐亮（上一幕是渐黑收尾的，勾上衔接自然）")]
         [SerializeField] private bool fadeInOnStart = true;
+
+        [Header("大树送别（可选，全屏动画版；不拖则走旧的渐黑→男孩消失→渐亮）")]
+        [Tooltip("拖场景里另一个 FullscreenAnimPlayer（独立 Canvas+Animator，放送别动画）：两人走进触发区 → " +
+                 "盖屏播全屏动画（屏幕盖严时男孩退场）→ 播完淡出，回来只剩女孩")]
+        [SerializeField] private FullscreenAnimPlayer treeFarewell;
+        [Tooltip("送别动画的状态名（与送别 Animator 根层级状态逐字一致；剪辑记得勾掉 Loop Time）")]
+        [SerializeField] private string treeFarewellState = "TreeFarewell";
 
         [Header("自动走位区（仅第 1 次进大树场景生效：走进区域 → 自动走到目标点 → 到达后可选切场景）")]
         [Tooltip("第 2 次及以后进入（结局 visit）所有走位区一律不生效——女孩自由走动，结局由结局区触发")]
@@ -83,9 +91,9 @@ namespace Healing.Demo3.Adapters
         [SerializeField] private List<string> requiredTablets = new List<string>();
         [Tooltip("结局导演（可选）：拖 EndingDirector 播演员版结局演出（女孩倚树/大姐姐相拥/语音）；不拖则渐黑定格即结局")]
         [SerializeField] private EndingDirector endingDirector;
-        [Tooltip("全屏结局播放器（可选）：拖场景里的 EndingFullscreenPlayer（盖屏 Canvas+Animator 播全屏纯动画结局）。" +
+        [Tooltip("全屏结局播放器（可选）：拖场景里的 FullscreenAnimPlayer（盖屏 Canvas+Animator 播全屏纯动画结局）。" +
                  "拖了它优先于 Ending Director——纯动画演出用它")]
-        [SerializeField] private EndingFullscreenPlayer fullscreenEnding;
+        [SerializeField] private FullscreenAnimPlayer fullscreenEnding;
 
         private IDemo3Services services;
         private ActWalkSession player;
@@ -102,7 +110,7 @@ namespace Healing.Demo3.Adapters
 
         private void Start()
         {
-            Debug.Log("[Demo3] Act3TreeRoot v10.20c 已加载（重回大树：自由走动等结局；结局支持全屏纯动画播放器）", this);
+            Debug.Log("[Demo3] Act3TreeRoot v10.20d 已加载（重回大树：自由走动等结局；大树送别支持全屏动画）", this);
             StartCoroutine(InitWhenReady());
         }
 
@@ -303,11 +311,36 @@ namespace Healing.Demo3.Adapters
                 StartCoroutine(TreeRoutine());
         }
 
-        /// <summary>大树收尾演出：渐黑 → 男孩销毁（只剩女孩）→ 黑场片刻 → 渐亮回来，留在枢纽场景</summary>
+        /// <summary>
+        /// 大树收尾演出（仅第 1 次进入，两人走进触发区触发）。两版二选一：
+        /// 拖了 Tree Farewell → 全屏动画版：盖屏淡入 → 屏幕盖严时男孩退场 → 播送别动画 → 播完淡出，只剩女孩；
+        /// 没拖 → 渐黑版（兜底）：渐黑 → 全黑中销毁男孩 → 黑场片刻 → 渐亮回来，只剩女孩。
+        /// 两版都不切场景，播完留在枢纽场景自由行动。
+        /// </summary>
         private IEnumerator TreeRoutine()
         {
             treeDone = true;
             player.ControlLocked = true;
+
+            if (treeFarewell != null)
+            {
+                // 全屏动画版：男孩在屏幕被盖严时退场（玩家看不见销毁瞬间）
+                bool done = false;
+                treeFarewell.PlayOnce(treeFarewellState,
+                    onCovered: () =>
+                    {
+                        if (handhold != null) handhold.Active = false;
+                        if (boy != null) Destroy(boy.gameObject);
+                        boyPresent = false;
+                    },
+                    onComplete: () => done = true);
+                while (!done) yield return null;
+                Debug.Log("[Demo3] 大树演出播完（全屏动画）：男孩已退场，只剩女孩。需要演出才激活的走位区现已开放（提示物显现）。", this);
+                player.ControlLocked = false;
+                yield break;
+            }
+
+            // 渐黑版（兜底）
             for (float t = 0f; t < treeFadeSeconds; t += Time.deltaTime)
             {
                 if (fadeToBlack != null) fadeToBlack.alpha = Mathf.Clamp01(t / treeFadeSeconds);
