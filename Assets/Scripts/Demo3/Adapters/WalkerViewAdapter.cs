@@ -47,6 +47,11 @@ namespace Healing.Demo3.Adapters
                 sprite = null;
             }
             if (sprite != null) baseSpriteLocalPos = sprite.localPosition;
+            if (sprite != null && ((Vector2)sprite.localPosition).magnitude > 1.5f)
+                Debug.LogWarning($"[Demo3] {name} 的 Sprite 子物体本地偏移 {sprite.localPosition} 很大——" +
+                                 "视觉位置与判定用的逻辑位置（根物体）会相差这么多：看着站进触发区、逻辑上其实没进" +
+                                 "（走进触发区没反应的经典假象）。建议把 Sprite 本地坐标归零，" +
+                                 "偏移改由 SpriteRenderer 的 Pivot/图集设置承担。", this);
 
             // 排他自检：根物体上不允许再挂 Animator——它会按自己控制器的默认状态每帧覆写根物体位置，
             // 把刚体移动整个顶掉（症状：动画正常播、角色原地踏步、相机与跟随者全都不动）。
@@ -60,7 +65,7 @@ namespace Healing.Demo3.Adapters
                                "请把它从根物体上删掉（Animator 只应留在 Sprite 子物体上）。", this);
                 rootAnim.enabled = false;
             }
-            Debug.Log("[Demo3] WalkerViewAdapter v10.18e 已加载（跳跃动画预留位版）", this);
+            Debug.Log("[Demo3] WalkerViewAdapter v10.18f 已加载（视觉偏移过大警告版）", this);
         }
 
         public void Bind(Vector2 startPos)

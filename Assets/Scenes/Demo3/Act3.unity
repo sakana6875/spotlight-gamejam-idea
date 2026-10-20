@@ -362,7 +362,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6dafb551b63067548a03f6705633fc77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  follower: {fileID: 1252964846}
+  follower: {fileID: 550652216}
   holdOffset: {x: 0.45, y: -0.1}
   followLerp: 5
   active: 0
@@ -841,7 +841,7 @@ Transform:
   m_GameObject: {fileID: 1252964843}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.43, y: -0.18, z: 0}
+  m_LocalPosition: {x: 0.43, y: -3.69, z: 0}
   m_LocalScale: {x: 0.15, y: 0.15, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -971,15 +971,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 357d8ef506fc3a745a673337a8cb9177, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  animator: {fileID: 0}
-  sprite: {fileID: 0}
+  animator: {fileID: 550652217}
+  sprite: {fileID: 550652216}
   directDrive: 1
   states:
-    idle: Idle
-    moveDown: MoveDown
-    moveUp: MoveUp
-    moveLeft: MoveLeft
-    moveRight: MoveRight
+    idle: Idle1
+    moveDown: MoveDown1
+    moveUp: MoveUp1
+    moveLeft: MoveLeft1
+    moveRight: MoveRight1
     kneel: Kneel
     coverEarsIdle: CoverEars
     coverEarsMoveDown: 
@@ -1044,7 +1044,7 @@ Transform:
   m_GameObject: {fileID: 1385481968}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.7, y: -22.9, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1172,7 +1172,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.779438, y: -1.5458827}
+  m_Offset: {x: 0.82261467, y: -1.0709248}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -1183,7 +1183,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 33.684387, y: 19.160877}
+  m_Size: {x: 36.53413, y: 25.205791}
   m_EdgeRadius: 0
 --- !u!4 &1392118557
 Transform:
@@ -1563,7 +1563,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mode: 1
-  cam: {fileID: 0}
+  cam: {fileID: 1713974205}
   followLerp: 6
   externalControl: 1
 --- !u!114 &1713974209
@@ -1802,7 +1802,7 @@ MonoBehaviour:
     RequireTreeDone: 0
     ActiveVisual: {fileID: 0}
   - Zone: {fileID: 1276801333}
-    Target: {fileID: 0}
+    Target: {fileID: 639239159}
     GoToSceneId: Act2-1
     Once: 1
     RequireTreeDone: 1

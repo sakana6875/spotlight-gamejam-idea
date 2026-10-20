@@ -38,6 +38,8 @@ namespace Healing.Demo3.Adapters
             public GameObject ActiveVisual;
             [NonSerialized] public bool Fired;
             [NonSerialized] public bool BlockedLogged;
+            [NonSerialized] public bool WasInside; // 上一帧玩家是否在判定范围内（进区即时诊断用）
+            [NonSerialized] public bool NearLogged; // 已报过一次「走近但没进判定」
         }
 
         [Header("角色")]
@@ -96,7 +98,7 @@ namespace Healing.Demo3.Adapters
 
         private void Start()
         {
-            Debug.Log("[Demo3] Act3TreeRoot v10.19e 已加载（大树枢纽：走位区+结局区防误入失活/显现版）", this);
+            Debug.Log("[Demo3] Act3TreeRoot v10.19j 已加载（大树枢纽：走位区坐标对质诊断版）", this);
             StartCoroutine(InitWhenReady());
         }
 
@@ -137,6 +139,16 @@ namespace Healing.Demo3.Adapters
             if (!first && boy != null) Destroy(boy.gameObject); // 后续进入：男孩已不在
             if (first && treeTrigger == null)
                 Debug.LogWarning("[Demo3] Tree Trigger 未拖：两人到大树不会有「全黑 → 男孩退场」演出。", this);
+            if (boyPresent && handhold == null)
+                Debug.LogError("[Demo3] Handhold 字段没拖！男孩不会跟随女孩（两人各走各的、相隔很远）。" +
+                               "把场景里的 HandholdFollower 物体（如 Girl 的子物体 Handhold）拖进来。", this);
+            for (int i = 0; i < autoWalkZones.Count; i++)
+            {
+                var z = autoWalkZones[i];
+                if (z != null && (z.Zone == null || z.Target == null))
+                    Debug.LogWarning($"[Demo3] Auto Walk Zones 第 {i + 1} 条没配全（Zone/Target 缺一不可）" +
+                                     "——这条会被静默跳过，走进区域毫无反应。补齐或删掉它。", this);
+            }
             if (!first && endingTrigger == null)
                 Debug.LogWarning("[Demo3] 第 2 次及以后进大树场景但 Ending Trigger 没拖——重回大树不会触发结局。在大树处放一个空物体碰撞体拖进来。", this);
             if (endingTrigger != null && requiredTablets.Count == 0)
@@ -144,6 +156,22 @@ namespace Healing.Demo3.Adapters
             if (!walkBounds.Contains(girl.transform.position))
                 Debug.LogError($"[Demo3] 大树场景的 Walk Bounds Area（{walkBounds}）没罩住女孩出生点 " +
                                $"{(Vector2)girl.transform.position}——第一帧她会被钳到边缘。拉大该碰撞体即可。", this);
+
+            // 触发区必须落在 Walk Bounds 内：在框外时玩家被钳制永远走不进去，触发区形同虚设（典型「走进区毫无反应」）
+            CheckAreaInside(walkBounds, treeTrigger, "Tree Trigger");
+            CheckAreaInside(walkBounds, endingTrigger, "Ending Trigger");
+            for (int i = 0; i < autoWalkZones.Count; i++)
+            {
+                var z = autoWalkZones[i];
+                if (z != null && z.Zone != null)
+                {
+                    CheckAreaInside(walkBounds, z.Zone, $"Auto Walk Zones 第 {i + 1} 条");
+                    if (z.Target != null)
+                        Debug.Log($"[Demo3] 走位区第 {i + 1} 条「{z.Target.name}」判定包围盒：中心 {(Vector2)z.Zone.bounds.center}，" +
+                                  $"尺寸 {(Vector2)z.Zone.bounds.size}；目标点 {(Vector2)z.Target.position}。" +
+                                  $"（女孩出生点 {(Vector2)girl.transform.position}，Walk Bounds {walkBounds}）", this);
+                }
+            }
 
             player = new ActWalkSession(girl.transform.position, walkSpeed) { Bounds = walkBounds };
             girl.Bind(player.Position);
@@ -197,6 +225,32 @@ namespace Healing.Demo3.Adapters
                 foreach (var z in autoWalkZones)
                 {
                     if (z == null || z.Zone == null || z.Target == null) continue;
+                    // 进区即时诊断：走进判定范围的当帧报一条，并说明接下来会触发/被拦/已消费——
+                    // 没这条日志=根本没走进判定（查 Walk Bounds 是否罩住该区、是否拖进了列表）
+                    bool insideNow = z.Zone.bounds.Contains(player.Position);
+                    if (insideNow && !z.WasInside)
+                        Debug.Log($"[Demo3] 检测到你走进走位区「{z.Target.name}」的判定范围" +
+                                  (z.Once && z.Fired ? "（本条 Once 已消费过，不再触发）" :
+                                   z.RequireTreeDone && boyPresent ? "（男孩未退场，本条被 Require Tree Done 拦住）" :
+                                   "，开始自动走位。"), this);
+                    else if (!insideNow && !z.NearLogged)
+                    {
+                        // 走近（2.5 米内）但没进判定：把双方坐标打出来对质——
+                        // 视觉站在绿框里却没日志 = 绿框物体的碰撞体没罩住绿框（尺寸/偏移不对），按坐标调整
+                        Vector2 pp = player.Position;
+                        Bounds zb = z.Zone.bounds;
+                        float dx = Mathf.Max(zb.min.x - pp.x, 0f, pp.x - zb.max.x);
+                        float dy = Mathf.Max(zb.min.y - pp.y, 0f, pp.y - zb.max.y);
+                        if (dx * dx + dy * dy < 2.5f * 2.5f)
+                        {
+                            z.NearLogged = true;
+                            Debug.Log($"[Demo3] 你走到了走位区「{z.Target.name}」附近但没进判定：" +
+                                      $"你的逻辑位置 {pp}，判定包围盒 中心 {(Vector2)zb.center} 尺寸 {(Vector2)zb.size}。" +
+                                      "视觉上若已站进绿框＝碰撞体和绿框不重合（Offset/Size 调一下）。", this);
+                        }
+                    }
+                    if (insideNow) z.NearLogged = false;
+                    z.WasInside = insideNow;
                     if (z.Once && z.Fired) continue;
                     if (z.RequireTreeDone && boyPresent)
                     {
@@ -326,6 +380,21 @@ namespace Healing.Demo3.Adapters
 
         private static string Demo3EndingName(Demo3Ending ending)
             => ending == Demo3Ending.IsItYou ? "结局二「是你吗？」" : "结局一「还是你」";
+
+        /// <summary>自检：触发区必须落在 Walk Bounds 内，否则玩家被钳制永远走不进去（完全在外=红字，部分在外=黄字）</summary>
+        private void CheckAreaInside(Rect walkBounds, Collider2D area, string what)
+        {
+            if (area == null) return;
+            Bounds ab = area.bounds;
+            bool minIn = walkBounds.Contains(ab.min);
+            bool maxIn = walkBounds.Contains(ab.max);
+            if (!minIn && !maxIn)
+                Debug.LogError($"[Demo3] {what}（{area.name}，包围盒 {ab}）完全在 Walk Bounds Area（{walkBounds}）之外" +
+                               "——女孩被钳制永远走不进它，这个触发区形同虚设。把 Walk Bounds Area 拉大罩住它（或把它挪回活动范围内）。", this);
+            else if (!minIn || !maxIn)
+                Debug.LogWarning($"[Demo3] {what}（{area.name}）只有一部分在 Walk Bounds Area 内——玩家只能走进重叠部分，" +
+                                 "很难触发。建议把 Walk Bounds Area 拉大罩住整个区域。", this);
+        }
 
         /// <summary>自动走位到达后的切场：渐黑 → GoTo</summary>
         private IEnumerator GoRoutine(string sceneId)

@@ -501,7 +501,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mode: 1
-  cam: {fileID: 0}
+  cam: {fileID: 850090748}
   followLerp: 6
   externalControl: 0
 --- !u!114 &850090751

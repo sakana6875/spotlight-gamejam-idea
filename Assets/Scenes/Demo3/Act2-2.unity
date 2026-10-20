@@ -1615,9 +1615,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   girl: {fileID: 0}
   cameraRig: {fileID: 1694646059}
-  walkBoundsArea: {fileID: 1688014053}
+  walkBoundsArea: {fileID: 1264508967}
   crowdZoneArea: {fileID: 0}
-  mushrooms: []
+  mushrooms:
+  - {fileID: 1277428987}
+  - {fileID: 799726630}
+  - {fileID: 1550384986}
+  - {fileID: 219060126}
+  - {fileID: 867743695}
+  - {fileID: 382062724}
+  - {fileID: 1660633556}
   hiddenPlatforms:
   - {fileID: 1927507726}
   - {fileID: 682767792}
@@ -2484,6 +2491,52 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &1519677414
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1519677416}
+  - component: {fileID: 1519677415}
+  m_Layer: 0
+  m_Name: FllowProxy
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1519677415
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1519677414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c27ededd47915a34db84f5316fd4b6d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  target: {fileID: 469656552}
+  lockX: 1
+--- !u!4 &1519677416
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1519677414}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1532173235
 GameObject:
   m_ObjectHideFlags: 0
@@ -2836,7 +2889,7 @@ MonoBehaviour:
   m_Priority: 10
   m_StandbyUpdate: 2
   m_LookAt: {fileID: 0}
-  m_Follow: {fileID: 0}
+  m_Follow: {fileID: 1519677416}
   m_Lens:
     FieldOfView: 60
     OrthographicSize: 6.4473333
@@ -2865,7 +2918,7 @@ Transform:
   m_GameObject: {fileID: 1653910667}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 18.84, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3187,7 +3240,7 @@ Transform:
   m_GameObject: {fileID: 1694646057}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 18.84, z: -10}
+  m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3661,3 +3714,4 @@ SceneRoots:
   - {fileID: 9152633}
   - {fileID: 869001801}
   - {fileID: 1801060066}
+  - {fileID: 1519677416}
