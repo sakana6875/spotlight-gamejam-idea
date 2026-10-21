@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d2f1b5c0e3a4f7b9c1d2e3f40516273, type: 3}
+  m_Name: StorySpeakerCatalog
+  m_EditorClassIdentifier: 
+  _hallBackground: {fileID: 21300000, guid: 3185a131a89e0e4408b34f4bff308f7a, type: 3}
+  _speakers:
+  - _speakerId: "a_xian"
+    _displayName: "阿闲"
+    _portrait: {fileID: 21300000, guid: 9ba8f265e2f49e64cbf66039391fa98b, type: 3}
+  - _speakerId: "bei_jie"
+    _displayName: "北街"
+    _portrait: {fileID: 21300000, guid: 413c3b1b8250d204aa50ef4f3d8e1f70, type: 3}
+  - _speakerId: "gui_yun"
+    _displayName: "归云"
+    _portrait: {fileID: 21300000, guid: 31af962784c9cf94c9f8a01a2c0ce282, type: 3}
+  - _speakerId: "dao_xia"
+    _displayName: "刀夏"
+    _portrait: {fileID: 21300000, guid: eef4f9b30ea06b840a2352a0e6e78e8c, type: 3}
+  - _speakerId: "miao_miao"
+    _displayName: "喵喵"
+    _portrait: {fileID: 21300000, guid: 927f7f809038c4f4fa1d1424dcafeeea, type: 3}
+  - _speakerId: "liang_feng"
+    _displayName: "凉风"
+    _portrait: {fileID: 21300000, guid: a1022391c121511499b170b18ff6f13d, type: 3}
+  - _speakerId: "mo_le"
+    _displayName: "摸了"
+    _portrait: {fileID: 21300000, guid: 64f957775bf5cef4abe83acacb0d8654, type: 3}
+  - _speakerId: "light"
+    _displayName: "light"
+    _portrait: {fileID: 21300000, guid: 93956596ba4bd8c41b580775a24ec0e3, type: 3}
+  - _speakerId: "yang_mei_hua"
+    _displayName: "杨梅花"
+    _portrait: {fileID: 0}
+  - _speakerId: "player"
+    _displayName: "玩家"
+    _portrait: {fileID: 0}
+  - _speakerId: "everyone"
+    _displayName: "全员"
+    _portrait: {fileID: 0}

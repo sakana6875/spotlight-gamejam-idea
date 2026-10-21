@@ -11,11 +11,11 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Ground
+  - SideWall
+  - Monster
+  - Pipe
+  - PipePlacementBlocker
   - 
   - 
   - 

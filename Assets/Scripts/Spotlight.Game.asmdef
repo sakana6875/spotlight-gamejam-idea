@@ -1,0 +1,20 @@
+{
+    "name": "Spotlight.Game",
+    "rootNamespace": "Spotlight",
+    "references": [
+        "Spotlight.Domain",
+        "Demo3",
+        "Unity.InputSystem",
+        "Cinemachine",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

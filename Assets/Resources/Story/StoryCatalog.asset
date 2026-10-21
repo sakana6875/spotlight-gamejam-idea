@@ -1,0 +1,1050 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1e0a4b9d2f4e6a8b0c1d2e3f405162, type: 3}
+  m_Name: StoryCatalog
+  m_EditorClassIdentifier: 
+  _nodes:
+  - id: "intro_001"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "欢迎欢迎！你就是我们NESTHOME的新成员吧！怎么称呼呀！"
+    nextId: "intro_002"
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "intro_002"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "欢迎xxx！待会就要开始我们的头脑风暴会啦，大家互相交流各自的想法，准备好了就到空沙发坐下吧！"
+    nextId: "intro_003"
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "greet_001"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "你好呀，我是北街，很高兴认识你！"
+    nextId: ""
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "greet_002"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "叫我阿闲就好，你想和我们做一辈子游戏嘛（眨眼）"
+    nextId: ""
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "greet_003"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "你好呀，我是归云，北街说他很高兴认识你！"
+    nextId: ""
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "greet_004"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "终于等到你...！想和我一起画画吗喵！"
+    nextId: ""
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "greet_005"
+    kind: 0
+    speakerIds:
+    - "miao_miao"
+    text: "……你，你好"
+    nextId: ""
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "greet_006"
+    kind: 0
+    speakerIds:
+    - "liang_feng"
+    text: "（高冷）"
+    nextId: ""
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "intro_003"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "大家都准备好了吗，坐好咯，我要发车了，我开个会议录制记录一下我们说了啥，我们差不多就开始了。"
+    nextId: "intro_004"
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "intro_004"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "真期待这一次的游戏呀！不知道我们会做出什么有趣的游戏呢？我坐好了。"
+    nextId: "intro_005"
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "intro_005"
+    kind: 1
+    speakerIds:
+    - "gui_yun"
+    text: "(开启会议录制)"
+    nextId: "intro_006"
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "intro_006"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "这次GameJam主题是“涌现”，那我们逐个简单介绍一下自己的想法吧！"
+    nextId: "intro_007"
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "intro_007"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "那就我先开始吧！诶，我有一个点子……"
+    nextId: "music_001"
+    sceneLabel: "游戏开始"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_001"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "说到涌现，我最先联想到的就是泉水的“涌现”......"
+    nextId: "music_002"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_002"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "我的想法是做一个音游，玩家扮演地下的泉水，从地底深处出发，在缝隙中穿行，最终到达地面，涌现而出，成为美丽的喷泉！"
+    nextId: "music_003"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_003"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "在涌现到地面的途中，会有音乐为泉水指明方向，跟随音乐的节拍点击某个按键，会到达更高的地面！"
+    nextId: "music_004"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_004"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "这里就假设点击“空格”吧！"
+    nextId: "music_005"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_005"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "通过玩家敲击的时刻与节拍时间之差判定 miss/good/perfect ，"
+    nextId: "music_006"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_006"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "从而决定泉水往哪个方向的地下通道前往地面。"
+    nextId: "music_007"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_007"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "最终，泉水就能涌出地面！成为喷泉！"
+    nextId: "music_008"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_008"
+    kind: 2
+    speakerIds: []
+    text: "还想要再玩一次"
+    nextId: "music_002"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: "music_replay"
+  - id: "music_009"
+    kind: 2
+    speakerIds: []
+    text: "我理解了，回到讨论界面"
+    nextId: "music_010"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: "music_replay"
+  - id: "music_010"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "我们的亮点在于判定的形式上更有创造力，如果要完善的话还可以加更多有意思的路线机制进去呢！"
+    nextId: "music_011"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_011"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "但是这个对于我们的音乐和美术要求较高啦（挠头）"
+    nextId: "music_012"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "music_012"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "我的想法就是这个啦！你们觉得怎么样？"
+    nextId: "evolution_001"
+    sceneLabel: "神秘音游"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_001"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "你的想法好新颖！"
+    nextId: "evolution_002"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_002"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "但是剧情好简单欸！"
+    nextId: "evolution_003"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_003"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "玩家大人们可是身负巨大使命，我觉得既然要以“涌现”为主题，那不如让玩家大人们书写属于自己的创世神话！这可是生命的涌现呢！"
+    nextId: "evolution_004"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_004"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "在这个没有生命的无聊世界，唯一的希望—— 一颗种子，被深埋在世界中心。它一直在沉睡，一直在等待...直到！你的到来！"
+    nextId: "evolution_005"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_005"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "拯救这个世界的勇者啊！请把泉水引到世界中心，唤醒生命的希望吧！"
+    nextId: "evolution_006"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_006"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "玩家可以前进推动巨石填充坑洞，让泉水得以顺利流过，灌溉世界之种。"
+    nextId: "evolution_007"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_007"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "加油啊！勇者大人！世界就交给你了！"
+    nextId: "evolution_008"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_008"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "感谢你的壮举！世界的第一株生命开始生长，这单调的世界终于出现了第一抹绿！"
+    nextId: "evolution_009"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_009"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "不好！ 这单调世界的唯一绿色过于亮眼了，虚无兽涌过来了！他们要摧毁生命，让世界重回虚无！"
+    nextId: "evolution_010"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_010"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "伟大的勇者呀，请继续守护我们的世界之苗吧！直到它长成世界之树，就可以庇佑这片大地了！"
+    nextId: "evolution_011"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_011"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "请玩家按下鼠标左键进行攻击，坚持到幼苗长成大树。"
+    nextId: "evolution_012"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_012"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "坚持住，勇者大人！"
+    nextId: "evolution_013"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_013"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "再次感谢你的壮举！你又一次守护了这个世界！"
+    nextId: "evolution_019"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_019"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "世界之树得到了充分的灌溉，接下来，我们只需等待...."
+    nextId: "evolution_020"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_020"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "什么声音？！"
+    nextId: "evolution_021"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_021"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "勇者大人爬上树上看看吧"
+    nextId: "evolution_022"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_022"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "居然是虚无兽王，这将是最惊险的一场战斗了！勇者大人，坚持住！"
+    nextId: "evolution_023"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_023"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "兽王的智力较低，勇者可尝试引诱它撞击墙面造成眩晕，并趁机攻击哦"
+    nextId: "evolution_025"
+    sceneLabel: "进化之地"
+    failureNextId: "evolution_024"
+    choiceGroup: ""
+  - id: "evolution_024"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    - "gui_yun"
+    text: "伟大的勇者啊，就让我们来助你！"
+    nextId: "evolution_025"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_025"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    - "gui_yun"
+    text: "伟大的勇者啊，我们代表这片大地上的所有生灵，感谢您所做的一切....您将作为这片世界的创世者，被永远铭记于大地之上..."
+    nextId: "evolution_026"
+    sceneLabel: "进化之地"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "evolution_026"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "此方世界的故事暂时告一段落!"
+    nextId: "heal_001"
+    sceneLabel: "治愈系交互"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "heal_001"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "大家感觉怎么样？"
+    nextId: "heal_002"
+    sceneLabel: "治愈系交互"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "heal_002"
+    kind: 2
+    speakerIds: []
+    text: "我感觉很不错！"
+    nextId: "heal_004"
+    sceneLabel: "治愈系交互"
+    failureNextId: ""
+    choiceGroup: "heal_feedback"
+  - id: "heal_003"
+    kind: 2
+    speakerIds: []
+    text: "唔，还想听听其他人的想法"
+    nextId: "heal_004"
+    sceneLabel: "治愈系交互"
+    failureNextId: ""
+    choiceGroup: "heal_feedback"
+  - id: "heal_004"
+    kind: 0
+    speakerIds:
+    - "mo_le"
+    text: "Hrrm…… Hmmmrr……（角落里的生物好像在发出什么声音……）"
+    nextId: "heal_005"
+    sceneLabel: "治愈系交互"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "heal_005"
+    kind: 0
+    speakerIds:
+    - "liang_feng"
+    text: "摸了老师的意思是他也有一个想法，他要用精神共享让我们体验一下！"
+    nextId: "heal_006"
+    sceneLabel: "治愈系交互"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "heal_006"
+    kind: 0
+    speakerIds:
+    - "mo_le"
+    text: "Hmmr…… Hmrr……（发出肯定的声音）"
+    nextId: "chaos_001"
+    sceneLabel: "治愈系交互"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_001"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "我懂了！确实不错，整个游戏流程体验下来就是小女孩记忆涌现慢慢治愈的过程。"
+    nextId: "chaos_002"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_002"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "但是玩法好像没有很突出，主要的氛围感需要大量的美术资产产出，不知道是否可以在比赛工期内很好的完成呢。"
+    nextId: "chaos_003"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_003"
+    kind: 1
+    speakerIds: []
+    text: "（light 附和地点点头）"
+    nextId: "chaos_004"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_004"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "大家还有谁有想法吗？"
+    nextId: "chaos_005"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_005"
+    kind: 1
+    speakerIds: []
+    text: "（众人摇摇头）"
+    nextId: "chaos_006"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_006"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "那我们的想法分享就到这里，大家先喝口水，我们准备从这三个想法里面定一下方向吧！"
+    nextId: "chaos_007"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_007"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "这可真是不好抉择，泉水破土而出的节奏感，物种新生的生命力，暖心治愈的记忆漫步，都是很不错的想法。"
+    nextId: "chaos_008"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_008"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "是呀是呀，都很符合涌现的主题。"
+    nextId: "chaos_009"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_009"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "唉？这么说的话我有一个点子！不如我们把这几个 demo 串联起来，你们看，大家讨论的过程也是\"想法涌现\"的过程，感觉也很符合主题，而且可以把我们想实现的点子都实现一遍。"
+    nextId: "chaos_010"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_010"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "哇！这确实是个好想法，大家怎么说？"
+    nextId: "chaos_011"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_011"
+    kind: 0
+    speakerIds:
+    - "miao_miao"
+    text: "（小声，手指在电脑上上划拉）那个……大家辛苦了。不过……想法虽然好，但是感觉很难串成一套连续的逻辑..."
+    nextId: "chaos_012"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_012"
+    kind: 0
+    speakerIds:
+    - "mo_le"
+    text: "Ermmm......（发出了担忧的声音）。"
+    nextId: "chaos_013"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_013"
+    kind: 0
+    speakerIds:
+    - "light"
+    text: "而且有的想法剧情是相对完善的，如果插入在头脑风暴的流程里面玩家体验剧情就不连贯了。"
+    nextId: "chaos_014"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_014"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "嗯嗯！我们毕竟是一个完整游戏，肯定不能乱七八糟地叙事。归云你刚刚说想要串联起来，怎么衔接各个 demo 呢？"
+    nextId: "chaos_015"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_015"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "我想的就是直接穿插在我们的讨论里面，但是具体的文案还没有考虑好(挠头)"
+    nextId: "chaos_016"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_016"
+    kind: 0
+    speakerIds:
+    - "liang_feng"
+    text: "那这样我们还要继续这个想法吗？我感觉这个文案没写好根本做不起来啊。"
+    nextId: "chaos_017"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_017"
+    kind: 0
+    speakerIds:
+    - "miao_miao"
+    text: "而且这样的话我们游戏的操作维度会很复杂......"
+    nextId: "chaos_018"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_018"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "但我觉得这个想法的亮点就在于多样的操作维度给以了玩家丰富的体验。在 GameJam 短期时间内我们不可能制作出精致大作，在这种短期项目中最重要的不是有趣的立意和创新的形式吗。"
+    nextId: "chaos_019"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_019"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "等等……如果我们有这么多的操作维度穿插在游戏里面，那是不是美术风格上面也要跟着变化？"
+    nextId: "chaos_020"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_020"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "应该是要的，这样才能有区分度。"
+    nextId: "chaos_021"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_021"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "(拍桌子)这么多内容根本没有办法画完！排期都排不过来，虽然想法要创新但也不能是天马行空吧！"
+    nextId: "chaos_022"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_022"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "或许我们可以复用大部分素材，只要规划的好就可以减轻压力，视觉上丰富游戏的多样性才立得住呀……"
+    nextId: "chaos_023"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_023"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "那你说说怎么分！素材规划根本没有说起来的这么简单。"
+    nextId: "chaos_024"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_024"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "素材复用规划我可以想办法，但是多样性还是要保证，实在不行部分地方可以用简笔白模垫着，把主要精力放在主角身上，游戏性立得住就行啊！"
+    nextId: "chaos_025"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_025"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "每次都拿‘先用白模’当借口，最后做出来完成度低，画面粗糙的黑锅哪次不是美术背？而且你说的素材复用规划根本是画大饼！之前有哪次做到过吗？凭什么每次都要美术给膨胀的需求兜底？！"
+    nextId: "chaos_026"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_026"
+    kind: 0
+    speakerIds:
+    - "mo_le"
+    text: "Errrm！Emmmmm......mmmmmrrrrrrrrrr?!!!!（先是泉水音游，转头又是像素战斗，最后接上剧情体验……现在连基础的核心循环都没有，说难听点就是三个半成品硬缝在一起！完全是胡闹"
+    nextId: "chaos_027"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_027"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "可这就是‘涌现’啊！不同的想法交织出现，立意上绝对是自洽的！"
+    nextId: "chaos_028"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_028"
+    kind: 0
+    speakerIds:
+    - "light"
+    text: "就算是半成品也没有办法完成吧，这点时间想要把整个东西串联在一起根本做不完！"
+    nextId: "chaos_029"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_029"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "还没跑通完整流程你怎么就知道不行？连尝试的胆量都没有，那我们打 GameJam 图什么喵？"
+    nextId: "chaos_030"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_030"
+    kind: 0
+    speakerIds:
+    - "miao_miao"
+    text: "那个……跑通完整流程来确定游戏能不能做完应该没办法实现。按你们现在的想法整个游戏的流程太复杂了，这不是简单的玩法实现。"
+    nextId: "chaos_031"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_031"
+    kind: 0
+    speakerIds:
+    - "miao_miao"
+    text: "(低头看电脑)所以验证是否值得做完可能要整个流程做的比较完整才能实现，而完成较为完整的流程后时间上肯定来不及了……"
+    nextId: "chaos_032"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_032"
+    kind: 0
+    speakerIds:
+    - "yang_mei_hua"
+    text: "感觉整个流程就像是剧情对话中间加了几个关卡？应该没有那么难实现吧。"
+    nextId: "chaos_033"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_033"
+    kind: 0
+    speakerIds:
+    - "mo_le"
+    text: "Emmmmmrr，rrrrrrrr?!!（说起来很轻巧！你怎么知道写程序多复杂！)"
+    nextId: "chaos_034"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_034"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "砍砍砍！把音游砍了，把战斗砍了，砍到最后就剩一个乱晃的走路模拟器，这还叫我们精心准备的作品吗？！"
+    nextId: "chaos_035"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_035"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "总比交一个开局就闪退、连剧情都体现不出来的的废品强！你要是不愿意砍，你来画完啊！"
+    nextId: "chaos_036"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_036"
+    kind: 0
+    speakerIds:
+    - "liang_feng"
+    text: "haha,那大家回去睡大觉吧！zzz...（开始睡觉)”"
+    nextId: "chaos_037"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_037"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "凉风你这是什么态度？！现在还没开始做，只是商量想法遇到困难就要撂挑子？！"
+    nextId: "chaos_038"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_038"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "哈！！！"
+    nextId: "chaos_039"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_039"
+    kind: 0
+    speakerIds:
+    - "light"
+    text: "“够了！这破游戏根本就不可能做出来！！”"
+    nextId: "chaos_040"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_040"
+    kind: 0
+    speakerIds:
+    - "player"
+    text: "别说了！大家一直在说气话……我们不是为了在互相撕扯才聚到这里的啊！"
+    nextId: "chaos_041"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "chaos_041"
+    kind: 2
+    speakerIds:
+    - "player"
+    text: "我们冷静思考一下，待会再继续讨论吧。"
+    nextId: "final_001"
+    sceneLabel: "混乱版"
+    failureNextId: ""
+    choiceGroup: "chaos_pause"
+  - id: "final_001"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "……呼，刚才我声音太大了，抱歉大家。我只是太想把所有好玩的东西都塞进去了，没考虑到大家也很累..."
+    nextId: "final_002"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_002"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "我也是……刚才说画不出来是气话喵。其实大家提的画面效果真的很酷，我只是怕自己画不好拖后腿……"
+    nextId: "final_003"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_003"
+    kind: 0
+    speakerIds:
+    - "miao_miao"
+    text: "……大家，不吵架了？（开心"
+    nextId: "final_004"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_004"
+    kind: 0
+    speakerIds:
+    - "liang_feng"
+    text: "...吵完就好。反正时间还够，现在开始做，来得及。"
+    nextId: "final_005"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_005"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "你们发现没有？我们刚才从泉水、战斗、治愈，一路吵到现在……这过程本身不就是“涌现”吗？"
+    nextId: "final_006"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_006"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "诶？怎么说？"
+    nextId: "final_007"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_007"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "你看，单拎出任何一个点子，都觉得差点意思；单看我们的分工，策划天马行空、程序严谨冷酷、美术追求完美，简直像水火不容的食材。但要是把它们像“包汉堡包”一样叠在一起呢？"
+    nextId: "final_008"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_008"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "汉堡包？你是说……把刚才那几个小玩法用讨论到吵架到和好的这层主线逻辑夹起来喵？"
+    nextId: "final_009"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_009"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "底层是扎实的程序面包胚，中间夹上音游的爽快肉饼、战斗的风味芝士、还有治愈的清新生菜，最后用我们吵架又和好的故事盖上顶层面包！"
+    nextId: "final_010"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_010"
+    kind: 0
+    speakerIds:
+    - "mo_le"
+    text: "emmmmr!emmmmr!"
+    nextId: "final_011"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_011"
+    kind: 0
+    speakerIds:
+    - "light"
+    text: "赞同。不同个体的想法碰撞在一起，最终诞生出超越个体之和的完整游戏——这就是最棒的“涌现”。"
+    nextId: "final_012"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_012"
+    kind: 0
+    speakerIds:
+    - "yang_mei_hua"
+    text: "那还等什么？开包开包！"
+    nextId: "final_013"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_013"
+    kind: 0
+    speakerIds:
+    - "miao_miao"
+    - "liang_feng"
+    text: "底层逻辑写好啦！放心往上放吧！"
+    nextId: "final_014"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_014"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    - "a_xian"
+    text: "把刚才的奇思妙想全都融进去！"
+    nextId: "final_015"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_015"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    - "light"
+    text: "美术资源和UI全速产出中！"
+    nextId: "final_016"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_016"
+    kind: 0
+    speakerIds:
+    - "mo_le"
+    - "gui_yun"
+    - "yang_mei_hua"
+    text: "emmmr!/最后一层盖上——完工！/完结撒花！"
+    nextId: "final_017"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_017"
+    kind: 0
+    speakerIds:
+    - "gui_yun"
+    text: "叮！会议记录保存完毕。而我们一起做出来的这个“汉堡包”……"
+    nextId: "final_018"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_018"
+    kind: 0
+    speakerIds:
+    - "a_xian"
+    text: "没错，就是你现在正在玩的这个游戏啦！从一开始的各执一词，到现在所有人的心血融合成你眼前的画面。"
+    nextId: "final_019"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_019"
+    kind: 0
+    speakerIds:
+    - "bei_jie"
+    text: "虽然过程鸡飞狗跳，但只要最后运行起来没有报错，并且看到你在这里玩得开心，就都值啦。"
+    nextId: "final_020"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_020"
+    kind: 0
+    speakerIds:
+    - "dao_xia"
+    text: "嘿嘿，欢迎来到我们的世界，也欢迎真正加入NESTHOME喵！"
+    nextId: "final_021"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "final_021"
+    kind: 0
+    speakerIds:
+    - "everyone"
+    text: "属于我们的游戏，现在才真正开始！接下来，轮到你和我们一起创造新的“涌现”啦，[玩家名字]！"
+    nextId: "story_001"
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
+  - id: "story_001"
+    kind: 3
+    speakerIds: []
+    text: ""
+    nextId: ""
+    sceneLabel: "升华版"
+    failureNextId: ""
+    choiceGroup: ""
